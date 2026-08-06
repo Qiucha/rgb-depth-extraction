@@ -53,6 +53,28 @@ class Face3D:
         base_rgb = mcolors.to_rgb(self.base_color)
         return (base_rgb[0] * intensity, base_rgb[1] * intensity, base_rgb[2] * intensity)
 
+    def generate_surface_dots(self, grid_res: int = 6) -> np.ndarray:
+        """
+        Generate an orderly grid of 3D homogeneous coordinates (N, 4) on the face surface.
+        Adds high-contrast spatial texture for epipolar block matching.
+        """
+        if len(self.vertices) != 4:
+            return np.empty((0, 4), dtype=np.float64)
+
+        res = grid_res * 2 if "room" in self.label else grid_res
+
+        u_vals = np.linspace(0.1, 0.9, res)
+        v_vals = np.linspace(0.1, 0.9, res)
+
+        v0, v1, v2, v3 = self.vertices[0], self.vertices[1], self.vertices[2], self.vertices[3]
+
+        dots = []
+        for u in u_vals:
+            for v in v_vals:
+                pt = (1.0 - u) * (1.0 - v) * v0 + u * (1.0 - v) * v1 + u * v * v2 + (1.0 - u) * v * v3
+                dots.append(pt)
+        return np.array(dots, dtype=np.float64)
+
 
 def create_box_faces(cx: float, cy: float, cz: float,
                      half_x: float, half_y: float, half_z: float,

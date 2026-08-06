@@ -32,13 +32,19 @@ class StereoRoomVisualizer:
         ("5: High Overview", (0.0, -1.5, 0.5)),
     ]
 
-    def __init__(self, stereo_rig: StereoCameraRig, room: RoomEnvironment, title: str = "Stereo 3D Room Visualizer with Direct Depth Extraction Pipeline"):
+    def __init__(self, stereo_rig: StereoCameraRig, room: RoomEnvironment, title: str = "Stereo 3D Room Visualizer with Direct Depth Extraction Pipeline", enable_dots: bool = False):
         """
-        Initialize StereoRoomVisualizer with injected stereo camera rig and room environment.
+        Initialize StereoRoomVisualizer with injected stereo camera rig, room environment, and optional dot grid texture rendering.
+        
+        :param stereo_rig: StereoCameraRig instance.
+        :param room: RoomEnvironment instance.
+        :param title: Window title.
+        :param enable_dots: If True, renders high-contrast dot grids on face surfaces for accurate passive stereo depth extraction.
         """
         self.stereo_rig = stereo_rig
         self.room = room
         self.title = title
+        self.enable_dots = enable_dots
 
         # Light source direction vector
         self.light_dir = np.array([-0.4, -0.8, -0.5])
@@ -107,6 +113,7 @@ class StereoRoomVisualizer:
         self.left_patches: List[Polygon] = []
         self.right_patches: List[Polygon] = []
         self.overlap_patches: List[Polygon] = []
+        self.dot_artists: List[object] = []
 
     def _render_camera_view(self, camera: PinholeCamera, ax: plt.Axes, patch_list: List[Polygon]) -> List[Tuple[float, Face3D, np.ndarray]]:
         """Render room geometry onto target axis using specified camera model."""
@@ -137,6 +144,19 @@ class StereoRoomVisualizer:
             )
             ax.add_patch(poly)
             patch_list.append(poly)
+
+            # Draw surface dot grid textures if enabled
+            if self.enable_dots:
+                dots_3d = face.generate_surface_dots(grid_res=6)
+                if len(dots_3d) > 0:
+                    dots_2d, z_depths = camera.project_vertices(dots_3d, return_depth=True)
+                    valid_dots = (z_depths > 0.1) & \
+                                 (dots_2d[:, 0] >= 0) & (dots_2d[:, 0] <= camera.width) & \
+                                 (dots_2d[:, 1] >= 0) & (dots_2d[:, 1] <= camera.height)
+                    if np.any(valid_dots):
+                        pts = dots_2d[valid_dots]
+                        line, = ax.plot(pts[:, 0], pts[:, 1], 'o', color='#ffffff', markeredgecolor='#000000', markeredgewidth=0.5, markersize=2.5, zorder=5)
+                        self.dot_artists.append(line)
 
         return visible_faces
 
@@ -170,11 +190,12 @@ class StereoRoomVisualizer:
             self.ax_overlap.add_patch(poly_right)
             self.overlap_patches.append(poly_right)
 
-    def _rasterize_faces(self, visible_faces: List[Tuple[float, Face3D, np.ndarray]]) -> np.ndarray:
+    def _rasterize_faces(self, camera: PinholeCamera, visible_faces: List[Tuple[float, Face3D, np.ndarray]]) -> np.ndarray:
         """
         Rasterize projected 3D faces into a 2D BGR numpy image array matching camera pixel resolution.
+        Includes high-contrast dot grid rendering if enable_dots is True.
         """
-        w, h = self.stereo_rig.width, self.stereo_rig.height
+        w, h = camera.width, camera.height
         img = np.zeros((h, w, 3), dtype=np.uint8)
         img[:] = (42, 23, 15)  # Dark BGR background (15, 23, 42)
 
@@ -187,6 +208,18 @@ class StereoRoomVisualizer:
             cv2.fillPoly(img, pts, (b, g, r))
             cv2.polylines(img, pts, isClosed=True, color=(0, 0, 0), thickness=1)
 
+            # Draw surface dot grid textures into image buffer for stereo matching
+            if self.enable_dots:
+                dots_3d = face.generate_surface_dots(grid_res=6)
+                if len(dots_3d) > 0:
+                    dots_2d, z_depths = camera.project_vertices(dots_3d, return_depth=True)
+                    valid_dots = (z_depths > 0.1) & \
+                                 (dots_2d[:, 0] >= 0) & (dots_2d[:, 0] < w) & \
+                                 (dots_2d[:, 1] >= 0) & (dots_2d[:, 1] < h)
+                    for px, py in np.int32(dots_2d[valid_dots]):
+                        cv2.circle(img, (px, py), radius=3, color=(255, 255, 255), thickness=-1)
+                        cv2.circle(img, (px, py), radius=4, color=(0, 0, 0), thickness=1)
+
         return img
 
     def update_depth_map(self, left_faces: List[Tuple[float, Face3D, np.ndarray]], right_faces: List[Tuple[float, Face3D, np.ndarray]]) -> None:
@@ -194,9 +227,17 @@ class StereoRoomVisualizer:
         Extract depth information directly from the scene views using the stereo depth extraction pipeline
         and render it on the bottom-right subplot.
         """
+        # Clear previous frame's dot artists in matplotlib
+        for artist in self.dot_artists:
+            try:
+                artist.remove()
+            except Exception:
+                pass
+        self.dot_artists.clear()
+
         # Rasterize left and right views into images
-        img_left = self._rasterize_faces(left_faces)
-        img_right = self._rasterize_faces(right_faces)
+        img_left = self._rasterize_faces(self.stereo_rig.left_camera, left_faces)
+        img_right = self._rasterize_faces(self.stereo_rig.right_camera, right_faces)
 
         # Run epipolar sliding window disparity calculation
         disp_map, valid_mask = self.matcher.compute_disparity(img_left, img_right)
@@ -220,7 +261,8 @@ class StereoRoomVisualizer:
             self.ax_depth.set_xlim(0, self.stereo_rig.width)
             self.ax_depth.set_ylim(self.stereo_rig.height, 0)
             self.ax_depth.set_aspect('equal')
-            self.ax_depth.set_title("Extracted 3D Depth Map (Direct Epipolar Pipeline)", fontsize=10.5, fontweight='bold', color='#10b981', pad=6)
+            mode_title = "Extracted 3D Depth Map (Textured Surface Dot Grid Pipeline)" if self.enable_dots else "Extracted 3D Depth Map (Direct Epipolar Pipeline)"
+            self.ax_depth.set_title(mode_title, fontsize=10.5, fontweight='bold', color='#10b981', pad=6)
             self.depth_cbar = self.fig.colorbar(self.depth_im, ax=self.ax_depth, fraction=0.046, pad=0.04)
             self.depth_cbar.ax.tick_params(colors='#94a3b8', labelsize=8)
             self.depth_cbar.set_label('Depth (m)', color='#10b981', fontsize=9)
@@ -241,9 +283,10 @@ class StereoRoomVisualizer:
 
         fov_deg = self.stereo_rig.get_fov_degrees()
         pos_str = f"X: {self.stereo_rig.pos_x:+.2f}, Y: {self.stereo_rig.pos_y:+.2f}, Z: {self.stereo_rig.pos_z:+.2f}"
+        texture_str = "ON (High-Contrast Dot Grid)" if self.enable_dots else "OFF (Solid Opaque Surfaces)"
         self.info_text.set_text(
             f"Stereo Rig Center: {pos_str}\n"
-            f"Baseline B: {self.stereo_rig.baseline:.2f} m | FOV: {fov_deg:.1f}°\n"
+            f"Baseline B: {self.stereo_rig.baseline:.2f} m | FOV: {fov_deg:.1f}° | Surface Texture: {texture_str}\n"
             f"Left Cam X: {self.stereo_rig.left_camera.pos_x:+.2f} | Right Cam X: {self.stereo_rig.right_camera.pos_x:+.2f}\n"
             f"Faces Rendered: {len(left_faces)} (L) / {len(right_faces)} (R)"
         )
