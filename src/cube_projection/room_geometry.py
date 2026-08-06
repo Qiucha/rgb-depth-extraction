@@ -53,18 +53,18 @@ class Face3D:
         base_rgb = mcolors.to_rgb(self.base_color)
         return (base_rgb[0] * intensity, base_rgb[1] * intensity, base_rgb[2] * intensity)
 
-    def generate_surface_dots(self, grid_res: int = 6) -> np.ndarray:
+    def generate_surface_dots(self, grid_res: int = 12) -> np.ndarray:
         """
-        Generate an orderly grid of 3D homogeneous coordinates (N, 4) on the face surface.
-        Adds high-contrast spatial texture for epipolar block matching.
+        Generate a dense, orderly grid of 3D homogeneous coordinates (N, 4) on the face surface.
+        Provides rich, high-contrast spatial texture for epipolar block matching and clear perspective visualization.
         """
         if len(self.vertices) != 4:
             return np.empty((0, 4), dtype=np.float64)
 
         res = grid_res * 2 if "room" in self.label else grid_res
 
-        u_vals = np.linspace(0.1, 0.9, res)
-        v_vals = np.linspace(0.1, 0.9, res)
+        u_vals = np.linspace(0.05, 0.95, res)
+        v_vals = np.linspace(0.05, 0.95, res)
 
         v0, v1, v2, v3 = self.vertices[0], self.vertices[1], self.vertices[2], self.vertices[3]
 

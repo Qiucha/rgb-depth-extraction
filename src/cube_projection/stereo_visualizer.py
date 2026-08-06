@@ -34,12 +34,12 @@ class StereoRoomVisualizer:
 
     def __init__(self, stereo_rig: StereoCameraRig, room: RoomEnvironment, title: str = "Stereo 3D Room Visualizer with Direct Depth Extraction Pipeline", enable_dots: bool = False):
         """
-        Initialize StereoRoomVisualizer with injected stereo camera rig, room environment, and optional dot grid texture rendering.
+        Initialize StereoRoomVisualizer with injected stereo camera rig, room environment, and optional dense dot grid texture rendering.
         
         :param stereo_rig: StereoCameraRig instance.
         :param room: RoomEnvironment instance.
         :param title: Window title.
-        :param enable_dots: If True, renders high-contrast dot grids on face surfaces for accurate passive stereo depth extraction.
+        :param enable_dots: If True, renders dense, high-contrast dot grids on face surfaces for accurate passive stereo depth extraction.
         """
         self.stereo_rig = stereo_rig
         self.room = room
@@ -145,9 +145,9 @@ class StereoRoomVisualizer:
             ax.add_patch(poly)
             patch_list.append(poly)
 
-            # Draw surface dot grid textures if enabled
+            # Draw dense surface dot grid textures if enabled
             if self.enable_dots:
-                dots_3d = face.generate_surface_dots(grid_res=6)
+                dots_3d = face.generate_surface_dots(grid_res=10)
                 if len(dots_3d) > 0:
                     dots_2d, z_depths = camera.project_vertices(dots_3d, return_depth=True)
                     valid_dots = (z_depths > 0.1) & \
@@ -155,7 +155,7 @@ class StereoRoomVisualizer:
                                  (dots_2d[:, 1] >= 0) & (dots_2d[:, 1] <= camera.height)
                     if np.any(valid_dots):
                         pts = dots_2d[valid_dots]
-                        line, = ax.plot(pts[:, 0], pts[:, 1], 'o', color='#ffffff', markeredgecolor='#000000', markeredgewidth=0.5, markersize=2.5, zorder=5)
+                        line, = ax.plot(pts[:, 0], pts[:, 1], 'o', color='#ffffff', markeredgecolor='#0f172a', markeredgewidth=0.6, markersize=3.0, zorder=5)
                         self.dot_artists.append(line)
 
         return visible_faces
@@ -210,7 +210,7 @@ class StereoRoomVisualizer:
 
             # Draw surface dot grid textures into image buffer for stereo matching
             if self.enable_dots:
-                dots_3d = face.generate_surface_dots(grid_res=6)
+                dots_3d = face.generate_surface_dots(grid_res=10)
                 if len(dots_3d) > 0:
                     dots_2d, z_depths = camera.project_vertices(dots_3d, return_depth=True)
                     valid_dots = (z_depths > 0.1) & \
@@ -227,7 +227,6 @@ class StereoRoomVisualizer:
         Extract depth information directly from the scene views using the stereo depth extraction pipeline
         and render it on the bottom-right subplot.
         """
-        # Clear previous frame's dot artists in matplotlib
         for artist in self.dot_artists:
             try:
                 artist.remove()
@@ -283,7 +282,7 @@ class StereoRoomVisualizer:
 
         fov_deg = self.stereo_rig.get_fov_degrees()
         pos_str = f"X: {self.stereo_rig.pos_x:+.2f}, Y: {self.stereo_rig.pos_y:+.2f}, Z: {self.stereo_rig.pos_z:+.2f}"
-        texture_str = "ON (High-Contrast Dot Grid)" if self.enable_dots else "OFF (Solid Opaque Surfaces)"
+        texture_str = "ON (Dense Dot Grid)" if self.enable_dots else "OFF (Solid Opaque Surfaces)"
         self.info_text.set_text(
             f"Stereo Rig Center: {pos_str}\n"
             f"Baseline B: {self.stereo_rig.baseline:.2f} m | FOV: {fov_deg:.1f}° | Surface Texture: {texture_str}\n"
