@@ -369,14 +369,14 @@ class StereoRoomVisualizer:
             self.ax_diff.set_xlim(0, self.stereo_rig.width)
             self.ax_diff.set_ylim(self.stereo_rig.height, 0)
             self.ax_diff.set_aspect('equal')
-            self.ax_diff.set_title(f"Absolute Depth Error (MAE: {mae:.2f} m)", fontsize=10.5, fontweight='bold', color='#f59e0b', pad=6)
+            self.ax_diff.set_title(f"Residual Difference Heatmap (MAE: {mae:.2f} m)", fontsize=10.5, fontweight='bold', color='#f59e0b', pad=6)
             self.diff_cbar = self.fig.colorbar(self.diff_im, ax=self.ax_diff, fraction=0.046, pad=0.04)
             self.diff_cbar.ax.tick_params(colors='#94a3b8', labelsize=8)
             self.diff_cbar.set_label('Error (m)', color='#f59e0b', fontsize=9)
         else:
             self.diff_im.set_data(diff_map)
             self.diff_im.set_clim(vmin=0.0, vmax=max(1.0, float(np.max(diff_map))))
-            self.ax_diff.set_title(f"Absolute Depth Error (MAE: {mae:.2f} m)", fontsize=10.5, fontweight='bold', color='#f59e0b', pad=6)
+            self.ax_diff.set_title(f"Residual Difference Heatmap (MAE: {mae:.2f} m)", fontsize=10.5, fontweight='bold', color='#f59e0b', pad=6)
 
     def update(self) -> None:
         """Render Left, Right, Overlapped, and Extracted Depth views simultaneously."""
