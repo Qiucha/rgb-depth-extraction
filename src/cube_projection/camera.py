@@ -84,6 +84,11 @@ class PinholeCamera:
         ])
 
     @property
+    def homogeneous_intrinsic_matrix(self) -> np.ndarray:
+        """Construct 3x4 Homogeneous Intrinsic Matrix K_3x4 = [K_3x3 | 0]."""
+        return np.hstack((self.intrinsic_matrix, np.zeros((3, 1))))
+
+    @property
     def extrinsic_matrix(self) -> np.ndarray:
         """Construct 3x4 Camera Extrinsic Matrix M_ext (Translation vector t, Identity R)."""
         R = np.eye(3)

@@ -32,19 +32,24 @@ class StereoRoomVisualizer:
         ("5: High Overview", (0.0, -1.5, 0.5)),
     ]
 
-    def __init__(self, stereo_rig: StereoCameraRig, room: RoomEnvironment, title: str = "Stereo 3D Room Visualizer with Direct Depth Extraction Pipeline", enable_dots: bool = False):
+    def __init__(self, stereo_rig: StereoCameraRig, room: RoomEnvironment,
+                 title: str = "Stereo 3D Room Visualizer with Direct Depth Extraction Pipeline",
+                 enable_dots: bool = False, layout: str = "3col"):
         """
-        Initialize StereoRoomVisualizer with injected stereo camera rig, room environment, and optional dense dot grid texture rendering.
-        
+        Initialize StereoRoomVisualizer with injected stereo camera rig, room environment, optional dense dot grid textures,
+        and selectable layout grid ("3col" for 2x3 grid or "3row" for 3x2 grid).
+
         :param stereo_rig: StereoCameraRig instance.
         :param room: RoomEnvironment instance.
         :param title: Window title.
         :param enable_dots: If True, renders dense, high-contrast dot grids on face surfaces for accurate passive stereo depth extraction.
+        :param layout: "3col" (2x3 grid: 3 columns) or "3row" (3x2 grid: 3 rows).
         """
         self.stereo_rig = stereo_rig
         self.room = room
         self.title = title
         self.enable_dots = enable_dots
+        self.layout = layout.lower()
 
         # Light source direction vector
         self.light_dir = np.array([-0.4, -0.8, -0.5])
@@ -59,14 +64,28 @@ class StereoRoomVisualizer:
             cy=self.stereo_rig.left_camera.cy
         )
 
-        # 2x2 Grid Layout
-        self.fig, axes = plt.subplots(2, 2, figsize=(14, 9.5))
-        self.ax_left = axes[0, 0]
-        self.ax_right = axes[0, 1]
-        self.ax_overlap = axes[1, 0]
-        self.ax_depth = axes[1, 1]
+        # Setup Subplot Grid Layout
+        if self.layout in ("3row", "3_rows"):
+            # 3 Rows x 2 Columns Layout
+            self.fig, axes = plt.subplots(3, 2, figsize=(14, 12))
+            plt.subplots_adjust(bottom=0.08, top=0.94, hspace=0.30, wspace=0.18)
+            self.ax_left = axes[0, 0]      # Row 0, Left
+            self.ax_right = axes[0, 1]     # Row 0, Right
+            self.ax_overlap = axes[1, 0]   # Row 1, Left
+            self.ax_gt_depth = axes[1, 1]  # Row 1, Right (Ground Truth Depth placed where extracted depth frame was!)
+            self.ax_depth = axes[2, 0]     # Row 2, Left (Extracted Depth Map moved to 3rd row!)
+            self.ax_diff = axes[2, 1]      # Row 2, Right (Absolute Depth Error Map)
+        else:
+            # Default 2 Rows x 3 Columns Layout ("3col" or "3_columns")
+            self.fig, axes = plt.subplots(2, 3, figsize=(18, 9.5))
+            plt.subplots_adjust(bottom=0.12, top=0.93, hspace=0.25, wspace=0.18)
+            self.ax_left = axes[0, 0]      # Top-Left
+            self.ax_right = axes[0, 1]     # Top-Middle
+            self.ax_depth = axes[0, 2]     # Top-Right (Extracted Depth Map moved to 3rd column!)
+            self.ax_overlap = axes[1, 0]   # Bottom-Left
+            self.ax_gt_depth = axes[1, 1]  # Bottom-Middle (Ground Truth Depth placed where extracted depth frame was!)
+            self.ax_diff = axes[1, 2]      # Bottom-Right (Absolute Depth Error Map)
 
-        plt.subplots_adjust(bottom=0.12, top=0.93, hspace=0.25, wspace=0.15)
         self.fig.suptitle(title, fontsize=14, fontweight='bold', color='#0f172a')
 
         # Active camera view axes setup
@@ -82,11 +101,25 @@ class StereoRoomVisualizer:
             ax.set_facecolor('#0f172a')  # Dark canvas background
             ax.set_title(label, fontsize=10.5, fontweight='bold', color='#3b82f6', pad=6)
 
-        # Bottom-Right quadrant for extracted depth map
-        self.ax_depth.set_facecolor('#090d16')
-        self.ax_depth.set_title("Extracted 3D Depth Map (Direct Epipolar Matching Pipeline)", fontsize=10.5, fontweight='bold', color='#10b981', pad=6)
+        # Depth visualization axes setup
+        depth_axes = [
+            (self.ax_gt_depth, "Ground Truth 3D Depth Map (Analytical Geometry)", '#38bdf8'),
+            (self.ax_depth, "Extracted 3D Depth Map (Epipolar Matching)", '#10b981'),
+            (self.ax_diff, "Absolute Depth Error (|Extracted - Ground Truth|)", '#f59e0b')
+        ]
+        for ax, label, title_color in depth_axes:
+            ax.set_xlim(0, self.stereo_rig.width)
+            ax.set_ylim(self.stereo_rig.height, 0)
+            ax.set_aspect('equal')
+            ax.set_facecolor('#090d16')
+            ax.set_title(label, fontsize=10.5, fontweight='bold', color=title_color, pad=6)
+
         self.depth_im = None
         self.depth_cbar = None
+        self.gt_depth_im = None
+        self.gt_cbar = None
+        self.diff_im = None
+        self.diff_cbar = None
 
         # Status text overlay (on Top-Left)
         self.info_text = self.ax_left.text(
@@ -222,10 +255,45 @@ class StereoRoomVisualizer:
 
         return img
 
+    def compute_ground_truth_depth(self, camera: PinholeCamera, visible_faces: List[Tuple[float, Face3D, np.ndarray]]) -> np.ndarray:
+        """
+        Compute ground truth metric depth map Z (in meters) for all visible 3D faces from the given camera view.
+        """
+        w, h = camera.width, camera.height
+        gt_depth = np.full((h, w), fill_value=np.inf, dtype=np.float64)
+
+        u_coords = np.arange(w, dtype=np.float64)
+        v_coords = np.arange(h, dtype=np.float64)
+        U, V = np.meshgrid(u_coords, v_coords)
+
+        dx = (U - camera.cx) / camera.focal_length
+        dy = (V - camera.cy) / camera.focal_length
+
+        C = np.array([camera.pos_x, camera.pos_y, camera.pos_z], dtype=np.float64)
+
+        for z_avg, face, projected_2d in visible_faces:
+            N = face.normal
+            V0 = face.vertices[0][:3]
+            num = float(np.dot(V0 - C, N))
+            denom = dx * N[0] + dy * N[1] + N[2]
+
+            with np.errstate(divide='ignore', invalid='ignore'):
+                face_z = np.where(np.abs(denom) > 1e-6, num / denom, np.inf)
+
+            mask = np.zeros((h, w), dtype=np.uint8)
+            pts = np.int32([projected_2d])
+            cv2.fillPoly(mask, pts, 1)
+
+            valid = (mask > 0) & (face_z > 0.1) & (face_z < gt_depth)
+            gt_depth[valid] = face_z[valid]
+
+        gt_depth[np.isinf(gt_depth)] = 0.0
+        return gt_depth
+
     def update_depth_map(self, left_faces: List[Tuple[float, Face3D, np.ndarray]], right_faces: List[Tuple[float, Face3D, np.ndarray]]) -> None:
         """
-        Extract depth information directly from the scene views using the stereo depth extraction pipeline
-        and render it on the bottom-right subplot.
+        Extract depth information using the stereo depth pipeline, compute analytical ground truth depth map,
+        and render Ground Truth, Extracted Depth, and Depth Error maps in their respective subplots.
         """
         for artist in self.dot_artists:
             try:
@@ -254,13 +322,38 @@ class StereoRoomVisualizer:
         display_depth = depth_map.copy()
         display_depth[~valid_mask] = 0.0
 
+        # Compute exact ground truth depth map from 3D room geometry
+        gt_depth = self.compute_ground_truth_depth(self.stereo_rig.left_camera, left_faces)
+
+        # Compute absolute depth error map
+        err_mask = (display_depth > 0) & (gt_depth > 0)
+        diff_map = np.zeros_like(gt_depth)
+        diff_map[err_mask] = np.abs(display_depth[err_mask] - gt_depth[err_mask])
+        mae = float(np.mean(diff_map[err_mask])) if np.any(err_mask) else 0.0
+
+        # Render / update Ground Truth Depth Map (where extracted depth frame originally was)
+        if self.gt_depth_im is None:
+            self.ax_gt_depth.clear()
+            self.gt_depth_im = self.ax_gt_depth.imshow(gt_depth, cmap='plasma', vmin=0.0, vmax=12.0)
+            self.ax_gt_depth.set_xlim(0, self.stereo_rig.width)
+            self.ax_gt_depth.set_ylim(self.stereo_rig.height, 0)
+            self.ax_gt_depth.set_aspect('equal')
+            self.ax_gt_depth.set_title("Ground Truth 3D Depth Map (Analytical Geometry)", fontsize=10.5, fontweight='bold', color='#38bdf8', pad=6)
+            self.gt_cbar = self.fig.colorbar(self.gt_depth_im, ax=self.ax_gt_depth, fraction=0.046, pad=0.04)
+            self.gt_cbar.ax.tick_params(colors='#94a3b8', labelsize=8)
+            self.gt_cbar.set_label('Depth (m)', color='#38bdf8', fontsize=9)
+        else:
+            self.gt_depth_im.set_data(gt_depth)
+            self.gt_depth_im.set_clim(vmin=0.0, vmax=max(5.0, float(np.max(gt_depth))))
+
+        # Render / update Extracted Depth Map (moved frame)
         if self.depth_im is None:
             self.ax_depth.clear()
             self.depth_im = self.ax_depth.imshow(display_depth, cmap='plasma', vmin=0.0, vmax=12.0)
             self.ax_depth.set_xlim(0, self.stereo_rig.width)
             self.ax_depth.set_ylim(self.stereo_rig.height, 0)
             self.ax_depth.set_aspect('equal')
-            mode_title = "Extracted 3D Depth Map (Textured Surface Dot Grid Pipeline)" if self.enable_dots else "Extracted 3D Depth Map (Direct Epipolar Pipeline)"
+            mode_title = "Extracted Depth Map (Textured Dots)" if self.enable_dots else "Extracted Depth Map (Epipolar Matching)"
             self.ax_depth.set_title(mode_title, fontsize=10.5, fontweight='bold', color='#10b981', pad=6)
             self.depth_cbar = self.fig.colorbar(self.depth_im, ax=self.ax_depth, fraction=0.046, pad=0.04)
             self.depth_cbar.ax.tick_params(colors='#94a3b8', labelsize=8)
@@ -268,6 +361,22 @@ class StereoRoomVisualizer:
         else:
             self.depth_im.set_data(display_depth)
             self.depth_im.set_clim(vmin=0.0, vmax=max(5.0, float(np.max(display_depth))))
+
+        # Render / update Absolute Depth Error Map
+        if self.diff_im is None:
+            self.ax_diff.clear()
+            self.diff_im = self.ax_diff.imshow(diff_map, cmap='inferno', vmin=0.0, vmax=2.0)
+            self.ax_diff.set_xlim(0, self.stereo_rig.width)
+            self.ax_diff.set_ylim(self.stereo_rig.height, 0)
+            self.ax_diff.set_aspect('equal')
+            self.ax_diff.set_title(f"Absolute Depth Error (MAE: {mae:.2f} m)", fontsize=10.5, fontweight='bold', color='#f59e0b', pad=6)
+            self.diff_cbar = self.fig.colorbar(self.diff_im, ax=self.ax_diff, fraction=0.046, pad=0.04)
+            self.diff_cbar.ax.tick_params(colors='#94a3b8', labelsize=8)
+            self.diff_cbar.set_label('Error (m)', color='#f59e0b', fontsize=9)
+        else:
+            self.diff_im.set_data(diff_map)
+            self.diff_im.set_clim(vmin=0.0, vmax=max(1.0, float(np.max(diff_map))))
+            self.ax_diff.set_title(f"Absolute Depth Error (MAE: {mae:.2f} m)", fontsize=10.5, fontweight='bold', color='#f59e0b', pad=6)
 
     def update(self) -> None:
         """Render Left, Right, Overlapped, and Extracted Depth views simultaneously."""
@@ -370,10 +479,12 @@ class StereoRoomVisualizer:
         w = self.stereo_rig.width
         h = self.stereo_rig.height
 
+        doffs = self.depth_calculator.doffs if hasattr(self, 'depth_calculator') and self.depth_calculator is not None else 0.0
+
         calib_content = (
             f"cam0=[{f:.2f} 0 {cx:.2f}; 0 {f:.2f} {cy:.2f}; 0 0 1]\n"
             f"cam1=[{f:.2f} 0 {cx:.2f}; 0 {f:.2f} {cy:.2f}; 0 0 1]\n"
-            f"doffs=0.0\n"
+            f"doffs={doffs:.2f}\n"
             f"baseline={b:.4f}\n"
             f"width={w}\n"
             f"height={h}\n"

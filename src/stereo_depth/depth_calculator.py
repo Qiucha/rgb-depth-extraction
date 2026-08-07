@@ -20,7 +20,7 @@ class DepthCalculator:
         self.cx = cx
         self.cy = cy
 
-    def disparity_to_depth(self, disparity_map, min_depth=0.1, max_depth=100.0):
+    def disparity_to_depth(self, disparity_map, min_depth=0.1, max_depth=15.0):
         """
         Converts disparity map (pixels) to metric depth map Z = (f * B) / (d + doffs).
         Returns depth_map in same metric units as baseline.
