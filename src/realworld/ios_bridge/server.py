@@ -100,6 +100,37 @@ class IOSBridgeServer:
         self.frame_count = 0
         self.start_time = None
         self.captured_frames = []
+        self.server_instance = None
+
+    def _process_and_generate_live_digest(self, frame_data: Dict[str, Any], out_dir: str):
+        """Runs stereo rectification, block matching, and live digest HTML update off the main event loop."""
+        try:
+            rectifier = HeterogeneousStereoRectifier(target_size=(640, 480))
+            rect_main, rect_uw, P1, P2, Q = rectifier.rectify_pair(
+                img_main=frame_data["img_main"], img_uw=frame_data["img_uw"],
+                K1=frame_data["K1"], D1=np.zeros(5),
+                K2=frame_data["K2"], D2=np.zeros(5),
+                R=frame_data["R"], T=frame_data["T"]
+            )
+            gray_main = cv2.cvtColor(rect_main, cv2.COLOR_BGR2GRAY) if rect_main.ndim == 3 else rect_main
+            gray_uw = cv2.cvtColor(rect_uw, cv2.COLOR_BGR2GRAY) if rect_uw.ndim == 3 else rect_uw
+            matcher = SlidingWindowMatcher(window_size=7, max_disparity=48, metric="zncc")
+            raw_disp, _ = matcher.compute_disparity(gray_main, gray_uw)
+            f_rect = P1[0, 0]
+            baseline_m = float(np.linalg.norm(frame_data["T"])) / 1000.0 if np.linalg.norm(frame_data["T"]) > 1.0 else float(np.linalg.norm(frame_data["T"]))
+            depth_calc = DepthCalculator(focal_length=f_rect, baseline=baseline_m, doffs=0.0)
+            depth_map = depth_calc.disparity_to_depth(raw_disp)
+
+            generate_realworld_digest(
+                rect_main=rect_main, rect_uw=rect_uw,
+                disparity_map=raw_disp, depth_map_m=depth_map,
+                focal_length_px=float(f_rect), baseline_m=float(baseline_m),
+                output_dir=out_dir,
+                scene_name="Live iPhone Stereo Stream",
+                is_live=True
+            )
+        except Exception as err:
+            print(f"[IOSBridgeServer] Live digest update warning: {err}")
 
     def save_frame_to_dataset(self, frame_data: Dict[str, Any]):
         """Saves frame to sequence directory structure for pipeline ingestion."""
@@ -177,7 +208,25 @@ class IOSBridgeServer:
         self.frame_count = 0
         self.captured_frames = []
         out_dir = "digest_live_iphone"
-        server_launched = False
+
+        # Initialize digest folder and index.html upfront so serve_digest can launch immediately
+        os.makedirs(out_dir, exist_ok=True)
+        index_path = os.path.join(out_dir, "index.html")
+        if not os.path.exists(index_path):
+            dummy_img = np.zeros((480, 640, 3), dtype=np.uint8)
+            dummy_disp = np.zeros((480, 640), dtype=np.float32)
+            dummy_depth = np.zeros((480, 640), dtype=np.float32)
+            generate_realworld_digest(
+                rect_main=dummy_img, rect_uw=dummy_img,
+                disparity_map=dummy_disp, depth_map_m=dummy_depth,
+                focal_length_px=500.0, baseline_m=0.02,
+                output_dir=out_dir,
+                scene_name="Live iPhone Stereo Stream",
+                is_live=True
+            )
+
+        if not self.server_instance:
+            self.server_instance = serve_digest(out_dir, port=8080, open_browser=True, block=False)
 
         try:
             async for message in websocket:
@@ -191,39 +240,9 @@ class IOSBridgeServer:
                     if self.frame_count % 30 == 0:
                         print(f"[IOSBridgeServer] Streamed Frame #{frame_data['frame_id']} | FPS: {fps:.1f}")
 
-                    # Real-Time Inspection: update depth extraction every 15 frames (and on first frame)
+                    # Real-Time Inspection: update depth extraction asynchronously every 15 frames (and on frame 1)
                     if self.frame_count % 15 == 0 or self.frame_count == 1:
-                        try:
-                            rectifier = HeterogeneousStereoRectifier(target_size=(640, 480))
-                            rect_main, rect_uw, P1, P2, Q = rectifier.rectify_pair(
-                                img_main=frame_data["img_main"], img_uw=frame_data["img_uw"],
-                                K1=frame_data["K1"], D1=np.zeros(5),
-                                K2=frame_data["K2"], D2=np.zeros(5),
-                                R=frame_data["R"], T=frame_data["T"]
-                            )
-                            gray_main = cv2.cvtColor(rect_main, cv2.COLOR_BGR2GRAY)
-                            gray_uw = cv2.cvtColor(rect_uw, cv2.COLOR_BGR2GRAY)
-                            matcher = SlidingWindowMatcher(window_size=7, max_disparity=48, metric="zncc")
-                            raw_disp, _ = matcher.compute_disparity(gray_main, gray_uw)
-                            f_rect = P1[0, 0]
-                            baseline_m = float(np.linalg.norm(frame_data["T"])) / 1000.0 if np.linalg.norm(frame_data["T"]) > 1.0 else float(np.linalg.norm(frame_data["T"]))
-                            depth_calc = DepthCalculator(focal_length=f_rect, baseline=baseline_m, doffs=0.0)
-                            depth_map = depth_calc.disparity_to_depth(raw_disp)
-
-                            generate_realworld_digest(
-                                rect_main=rect_main, rect_uw=rect_uw,
-                                disparity_map=raw_disp, depth_map_m=depth_map,
-                                focal_length_px=float(f_rect), baseline_m=float(baseline_m),
-                                output_dir=out_dir,
-                                scene_name="Live iPhone Stereo Stream",
-                                is_live=True
-                            )
-
-                            if not server_launched:
-                                serve_digest(out_dir, port=8080, open_browser=True, block=False)
-                                server_launched = True
-                        except Exception as err:
-                            pass
+                        asyncio.create_task(asyncio.to_thread(self._process_and_generate_live_digest, frame_data, out_dir))
 
         except Exception as e:
             print(f"[IOSBridgeServer] Connection closed with info: {e}")
@@ -233,9 +252,8 @@ class IOSBridgeServer:
                 self.write_manifest()
                 if self.auto_process:
                     print(f"[IOSBridgeServer] Processing final high-resolution depth extraction pipeline...")
-                    run_realworld_pipeline(self.save_dir, output_dir=out_dir)
-                    print(f"\n[IOSBridgeServer] Visual digest dashboard updated on http://localhost:8080")
-                    serve_digest(out_dir, port=8080, open_browser=True, block=False)
+                    await asyncio.to_thread(run_realworld_pipeline, self.save_dir, output_dir=out_dir)
+                    print(f"\n[IOSBridgeServer] Final visual digest dashboard updated on http://localhost:8080")
 
     async def start(self):
         if websockets is None:

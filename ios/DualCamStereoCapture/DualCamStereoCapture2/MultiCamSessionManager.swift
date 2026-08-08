@@ -45,6 +45,8 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
         captureSession.beginConfiguration()
         defer { captureSession.commitConfiguration() }
 
+        let pixelFormat = Int(kCVPixelFormatType_32BGRA)
+
         // 1. Configure Main Wide Camera
         guard let mainDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
               let mainInput = try? AVCaptureDeviceInput(device: mainDevice),
@@ -57,6 +59,8 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
 
         let mainOutput = AVCaptureVideoDataOutput()
         mainOutput.alwaysDiscardsLateVideoFrames = true
+        mainOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: pixelFormat]
+
         guard captureSession.canAddOutput(mainOutput) else {
             throw NSError(domain: "MultiCamSession", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to add Main camera output."])
         }
@@ -85,6 +89,8 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
 
         let uwOutput = AVCaptureVideoDataOutput()
         uwOutput.alwaysDiscardsLateVideoFrames = true
+        uwOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: pixelFormat]
+
         guard captureSession.canAddOutput(uwOutput) else {
             throw NSError(domain: "MultiCamSession", code: 5, userInfo: [NSLocalizedDescriptionKey: "Failed to add Ultra-Wide camera output."])
         }
@@ -145,18 +151,17 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
         let ptsNS = UInt64(CMTimeGetSeconds(mainData.timestamp) * 1e9)
         self.frameCounter += 1
 
-        guard let mainJPEG = sampleBufferToJPEG(mainBuffer, quality: 0.65),
-              let uwJPEG = sampleBufferToJPEG(uwBuffer, quality: 0.65) else { return }
+        guard let mainJPEG = sampleBufferToJPEG(mainBuffer),
+              let uwJPEG = sampleBufferToJPEG(uwBuffer) else { return }
 
         let mainIntrinsics = extractIntrinsics(from: mainBuffer)
-        let uwIntrinsics = extractIntrinsics(from: uwBuffer)
-
         let mainMatrix = mainIntrinsics ?? matrix_float3x3(rows: [
             SIMD3<Float>(1400.0, 0, 960.0),
             SIMD3<Float>(0, 1400.0, 540.0),
             SIMD3<Float>(0, 0, 1.0)
         ])
 
+        let uwIntrinsics = extractIntrinsics(from: uwBuffer)
         let uwMatrix = uwIntrinsics ?? matrix_float3x3(rows: [
             SIMD3<Float>(600.0, 0, 960.0),
             SIMD3<Float>(0, 600.0, 540.0),
@@ -193,13 +198,14 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
         self.onFrameCaptured?(packet)
     }
 
-    private func sampleBufferToJPEG(_ sampleBuffer: CMSampleBuffer, quality: CGFloat = 0.65) -> Data? {
+    private func sampleBufferToJPEG(_ sampleBuffer: CMSampleBuffer) -> Data? {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return nil }
         let ciImage = CIImage(cvImageBuffer: imageBuffer)
-        let context = CIContext()
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else { return nil }
+        let context = CIContext(options: [.useSoftwareRenderer: false])
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent, format: .RGBA8, colorSpace: colorSpace) else { return nil }
         let uiImage = UIImage(cgImage: cgImage)
-        return uiImage.jpegData(compressionQuality: quality)
+        return uiImage.jpegData(compressionQuality: 0.8)
     }
 
     private func extractIntrinsics(from sampleBuffer: CMSampleBuffer) -> matrix_float3x3? {
