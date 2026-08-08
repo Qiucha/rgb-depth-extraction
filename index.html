@@ -1721,6 +1721,7 @@
         epipolarLine: '#f472b6',
         point3D: '#34d399',
         point2D: '#fbbf24',
+        takeawayBg: 'rgba(0, 242, 254, 0.12)',
         threeBg: 0x07090e,
         threeGrid: 0x334155,
       };
@@ -1749,6 +1750,7 @@
         epipolarLine: '#be185d',
         point3D: '#047857',
         point2D: '#b45309',
+        takeawayBg: 'rgba(2, 132, 199, 0.12)',
         threeBg: 0xf8fafc,
         threeGrid: 0xcbd5e1,
       };
@@ -2810,7 +2812,7 @@
     ctx5.fillText(`f=${f.toFixed(0)}px`, Math.max(8, top_camL_x - 60), (top_pinholeY + top_sensorY) / 2 + 3);
 
     // Similar Triangles Overlay Badge
-    ctx5.fillStyle = tc.takeaway-bg || 'rgba(2, 132, 199, 0.12)';
+    ctx5.fillStyle = tc.takeawayBg || 'rgba(2, 132, 199, 0.12)';
     ctx5.strokeStyle = tc.border;
     ctx5.fillRect(subW - 165, 6, 155, 20);
     ctx5.strokeRect(subW - 165, 6, 155, 20);
@@ -3345,7 +3347,7 @@
       ctx6.beginPath(); ctx6.arc(scanX, scanY, 3, 0, Math.PI*2); ctx6.fill();
     }
 
-    ctx6.fillStyle = tc.takeaway-bg || 'rgba(2, 132, 199, 0.12)';
+    ctx6.fillStyle = tc.takeawayBg || 'rgba(2, 132, 199, 0.12)';
     ctx6.strokeStyle = tc.border;
     ctx6.fillRect(leftX, h - 45, w - 2 * leftX, 35);
     ctx6.strokeRect(leftX, h - 45, w - 2 * leftX, 35);
