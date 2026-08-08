@@ -240,14 +240,18 @@ class IOSBridgeServer:
                     self.save_frame_to_dataset(frame_data)
 
                     telemetry = frame_data.get("telemetry", {})
-                    hw_cost = telemetry.get("hardware_cost", 0.0)
+                    hw_cost = telemetry.get("hardware_bandwidth_cost", telemetry.get("hardware_cost", 0.0))
+                    is_multi_cam = telemetry.get("is_multi_cam_supported", True)
+
+                    if not is_multi_cam:
+                        print("[IOSBridgeServer] WARNING: Hardware multi-camera streaming is NOT supported on sending device (e.g. running on Xcode Simulator).")
                     if hw_cost > 1.0:
-                        print(f"[IOSBridgeServer] WARNING: Hardware cost budget exceeded (cost: {hw_cost:.2f} > 1.0)! AVFoundation frames may drop or output solid black.")
+                        print(f"[IOSBridgeServer] WARNING: Hardware bandwidth cost budget exceeded (cost: {hw_cost:.2f} > 1.0)! AVFoundation frames may drop or output solid black.")
 
                     elapsed = time.time() - self.start_time
                     fps = self.frame_count / elapsed if elapsed > 0 else 0
                     if self.frame_count % 30 == 0:
-                        print(f"[IOSBridgeServer] Streamed Frame #{frame_data['frame_id']} | FPS: {fps:.1f} | Hardware Cost: {hw_cost:.2f}")
+                        print(f"[IOSBridgeServer] Streamed Frame #{frame_data['frame_id']} | FPS: {fps:.1f} | Hardware Bandwidth Cost: {hw_cost:.2f}")
 
                     # Real-Time Inspection: update depth extraction asynchronously every 15 frames (and on frame 1)
                     if self.frame_count % 15 == 0 or self.frame_count == 1:

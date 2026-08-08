@@ -69,7 +69,7 @@ class TestIOSBridge(unittest.TestCase):
                 "translation_vector_mm": [19.5, 0.0, 0.0]
             },
             "telemetry": {
-                "hardware_cost": 0.85,
+                "hardware_bandwidth_cost": 0.85,
                 "is_multi_cam_supported": True
             }
         }
@@ -86,7 +86,7 @@ class TestIOSBridge(unittest.TestCase):
         frame_data = BinaryPacketDecoder.decode(payload)
 
         self.assertIn("telemetry", frame_data)
-        self.assertAlmostEqual(frame_data["telemetry"]["hardware_cost"], 0.85)
+        self.assertAlmostEqual(frame_data["telemetry"]["hardware_bandwidth_cost"], 0.85)
         self.assertTrue(frame_data["telemetry"]["is_multi_cam_supported"])
 
     def test_cli_subprocess_execution(self):

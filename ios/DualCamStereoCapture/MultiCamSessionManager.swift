@@ -20,6 +20,41 @@ public struct StereoFramePacket {
     public let metadataJSON: Data
 }
 
+public enum MultiCamSessionError: LocalizedError {
+    case multiCamNotSupported
+    case cameraPermissionDenied
+    case mainInputCreationFailed
+    case mainOutputCreationFailed
+    case mainVideoPortNotFound
+    case ultrawideInputCreationFailed
+    case ultrawideOutputCreationFailed
+    case ultrawideVideoPortNotFound
+    case hardwareCostBudgetExceeded(cost: Float)
+
+    public var errorDescription: String? {
+        switch self {
+        case .multiCamNotSupported:
+            return "Hardware multi-cam not supported on this device or when running on Xcode Simulator."
+        case .cameraPermissionDenied:
+            return "Camera access is denied or restricted in iOS Privacy Settings."
+        case .mainInputCreationFailed:
+            return "Failed to add Main camera input to capture session."
+        case .mainOutputCreationFailed:
+            return "Failed to add Main camera output to capture session."
+        case .mainVideoPortNotFound:
+            return "Failed to find Main camera video port."
+        case .ultrawideInputCreationFailed:
+            return "Failed to add Ultra-Wide camera input to capture session."
+        case .ultrawideOutputCreationFailed:
+            return "Failed to add Ultra-Wide camera output to capture session."
+        case .ultrawideVideoPortNotFound:
+            return "Failed to find Ultra-Wide camera video port."
+        case .hardwareCostBudgetExceeded(let cost):
+            return "Exceeded AVCaptureMultiCamSession hardware cost budget (hardwareCost: \(cost) > 1.0). Lower active device resolutions or framerates."
+        }
+    }
+}
+
 public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDelegate {
     private let captureSession = AVCaptureMultiCamSession()
     private var dataSynchronizer: AVCaptureDataOutputSynchronizer?
@@ -27,6 +62,9 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
     private var mainOutputRef: AVCaptureVideoDataOutput?
     private var uwOutputRef: AVCaptureVideoDataOutput?
     private let ciContext = CIContext(options: nil)
+
+    // Cached hardware bandwidth cost to prevent session lock contention on frame delivery thread
+    private var cachedHardwareBandwidthCost: Float = 0.0
 
     public var onFrameCaptured: ((StereoFramePacket) -> Void)?
 
@@ -38,49 +76,53 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
         return AVCaptureMultiCamSession.isMultiCamSupported
     }
 
-    public func checkCameraAuthorization() throws {
+    public func checkCameraAuthorization(completion: @escaping (Result<Void, MultiCamSessionError>) -> Void) {
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         switch status {
         case .authorized:
-            return
+            completion(.success(()))
         case .denied, .restricted:
-            throw NSError(domain: "MultiCamSession", code: 10, userInfo: [NSLocalizedDescriptionKey: "Camera access is denied or restricted in iOS Privacy Settings."])
+            completion(.failure(.cameraPermissionDenied))
         case .notDetermined:
-            var granted = false
-            let sema = DispatchSemaphore(value: 0)
-            AVCaptureDevice.requestAccess(for: .video) { success in
-                granted = success
-                sema.signal()
-            }
-            _ = sema.wait(timeout: .now() + 5.0)
-            if !granted {
-                throw NSError(domain: "MultiCamSession", code: 11, userInfo: [NSLocalizedDescriptionKey: "Camera permission was not granted by the user."])
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                if granted {
+                    completion(.success(()))
+                } else {
+                    completion(.failure(.cameraPermissionDenied))
+                }
             }
         @unknown default:
-            throw NSError(domain: "MultiCamSession", code: 12, userInfo: [NSLocalizedDescriptionKey: "Unknown camera authorization status."])
+            completion(.failure(.cameraPermissionDenied))
         }
     }
 
     public func configureSession(targetWidth: Int32 = 1920, targetHeight: Int32 = 1080) throws {
         guard AVCaptureMultiCamSession.isMultiCamSupported else {
-            throw NSError(domain: "MultiCamSession", code: 1, userInfo: [NSLocalizedDescriptionKey: "Hardware multi-cam not supported on this device or when running on Xcode Simulator."])
+            throw MultiCamSessionError.multiCamNotSupported
         }
 
-        try checkCameraAuthorization()
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        guard status == .authorized else {
+            throw MultiCamSessionError.cameraPermissionDenied
+        }
 
-        let candidateResolutions: [(Int32, Int32)] = [
-            (targetWidth, targetHeight),
-            (1280, 720),
-            (640, 480)
+        struct Resolution {
+            let width: Int32
+            let height: Int32
+        }
+
+        let candidateResolutions: [Resolution] = [
+            Resolution(width: targetWidth, height: targetHeight),
+            Resolution(width: 1280, height: 720),
+            Resolution(width: 640, height: 480)
         ]
 
         var configuredSuccessfully = false
-        var lastHardwareCost: Float = 0.0
+        var lastCost: Float = 0.0
 
-        for (w, h) in candidateResolutions {
+        for res in candidateResolutions {
             captureSession.beginConfiguration()
-            
-            // Clear prior inputs and outputs if retrying lower resolution
+
             for input in captureSession.inputs { captureSession.removeInput(input) }
             for output in captureSession.outputs { captureSession.removeOutput(output) }
 
@@ -91,11 +133,11 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
                   let mainInput = try? AVCaptureDeviceInput(device: mainDevice),
                   captureSession.canAddInput(mainInput) else {
                 captureSession.commitConfiguration()
-                throw NSError(domain: "MultiCamSession", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to add Main camera input."])
+                throw MultiCamSessionError.mainInputCreationFailed
             }
             captureSession.addInputWithNoConnections(mainInput)
 
-            try configureDeviceFormat(device: mainDevice, targetWidth: w, targetHeight: h)
+            try configureDeviceFormat(device: mainDevice, targetWidth: res.width, targetHeight: res.height)
 
             let mainOutput = AVCaptureVideoDataOutput()
             mainOutput.alwaysDiscardsLateVideoFrames = true
@@ -103,14 +145,14 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
 
             guard captureSession.canAddOutput(mainOutput) else {
                 captureSession.commitConfiguration()
-                throw NSError(domain: "MultiCamSession", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to add Main camera output."])
+                throw MultiCamSessionError.mainOutputCreationFailed
             }
             captureSession.addOutputWithNoConnections(mainOutput)
             self.mainOutputRef = mainOutput
 
             guard let mainPort = mainInput.ports.first(where: { $0.mediaType == .video }) else {
                 captureSession.commitConfiguration()
-                throw NSError(domain: "MultiCamSession", code: 6, userInfo: [NSLocalizedDescriptionKey: "Failed to find Main camera video port."])
+                throw MultiCamSessionError.mainVideoPortNotFound
             }
 
             let mainConnection = AVCaptureConnection(inputPorts: [mainPort], output: mainOutput)
@@ -124,11 +166,11 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
                   let uwInput = try? AVCaptureDeviceInput(device: uwDevice),
                   captureSession.canAddInput(uwInput) else {
                 captureSession.commitConfiguration()
-                throw NSError(domain: "MultiCamSession", code: 4, userInfo: [NSLocalizedDescriptionKey: "Failed to add Ultra-Wide camera input."])
+                throw MultiCamSessionError.ultrawideInputCreationFailed
             }
             captureSession.addInputWithNoConnections(uwInput)
 
-            try configureDeviceFormat(device: uwDevice, targetWidth: w, targetHeight: h)
+            try configureDeviceFormat(device: uwDevice, targetWidth: res.width, targetHeight: res.height)
 
             let uwOutput = AVCaptureVideoDataOutput()
             uwOutput.alwaysDiscardsLateVideoFrames = true
@@ -136,14 +178,14 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
 
             guard captureSession.canAddOutput(uwOutput) else {
                 captureSession.commitConfiguration()
-                throw NSError(domain: "MultiCamSession", code: 5, userInfo: [NSLocalizedDescriptionKey: "Failed to add Ultra-Wide camera output."])
+                throw MultiCamSessionError.ultrawideOutputCreationFailed
             }
             captureSession.addOutputWithNoConnections(uwOutput)
             self.uwOutputRef = uwOutput
 
             guard let uwPort = uwInput.ports.first(where: { $0.mediaType == .video }) else {
                 captureSession.commitConfiguration()
-                throw NSError(domain: "MultiCamSession", code: 7, userInfo: [NSLocalizedDescriptionKey: "Failed to find Ultra-Wide camera video port."])
+                throw MultiCamSessionError.ultrawideVideoPortNotFound
             }
 
             let uwConnection = AVCaptureConnection(inputPorts: [uwPort], output: uwOutput)
@@ -156,20 +198,21 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
             dataSynchronizer = AVCaptureDataOutputSynchronizer(dataOutputs: [mainOutput, uwOutput])
             dataSynchronizer?.setDelegate(self, queue: DispatchQueue(label: "com.robotics.multicam.sync", qos: .userInitiated))
 
-            lastHardwareCost = captureSession.hardwareCost
+            lastCost = captureSession.hardwareCost
             captureSession.commitConfiguration()
 
             if captureSession.hardwareCost <= 1.0 {
                 configuredSuccessfully = true
-                print("[MultiCamSessionManager] Session configured successfully at \(w)x\(h) with hardwareCost: \(captureSession.hardwareCost)")
+                self.cachedHardwareBandwidthCost = captureSession.hardwareCost
+                print("[MultiCamSessionManager] Session configured successfully at \(res.width)x\(res.height) with hardwareCost: \(captureSession.hardwareCost)")
                 break
             } else {
-                print("[MultiCamSessionManager] Hardware cost \(captureSession.hardwareCost) > 1.0 for resolution \(w)x\(h). Retrying with lower format...")
+                print("[MultiCamSessionManager] Hardware cost \(captureSession.hardwareCost) > 1.0 for resolution \(res.width)x\(res.height). Retrying lower format...")
             }
         }
 
         if !configuredSuccessfully {
-            throw NSError(domain: "MultiCamSession", code: 8, userInfo: [NSLocalizedDescriptionKey: "Exceeded AVCaptureMultiCamSession hardware cost budget (hardwareCost: \(lastHardwareCost) > 1.0). Lower active device resolutions or framerates."])
+            throw MultiCamSessionError.hardwareCostBudgetExceeded(cost: lastCost)
         }
     }
 
@@ -245,7 +288,7 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
                 "translation_vector_mm": [19.5, 0.0, 0.0]
             ],
             "telemetry": [
-                "hardware_cost": Float(self.captureSession.hardwareCost),
+                "hardware_bandwidth_cost": self.cachedHardwareBandwidthCost,
                 "is_multi_cam_supported": AVCaptureMultiCamSession.isMultiCamSupported
             ]
         ]
