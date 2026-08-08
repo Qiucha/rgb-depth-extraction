@@ -1,0 +1,3651 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Camera Geometry & Stereo Math Studio</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- KaTeX for Math Formatting -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Three.js for 3D Interactive Graphics -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Chart.js for Graphs -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root, [data-theme="light"] {
+      --bg-dark: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --bg-card-border: #e2e8f0;
+      --bg-card-border-active: #0284c7;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-subtle: #64748b;
+      
+      --accent-cyan: #0284c7;
+      --accent-blue: #2563eb;
+      --accent-indigo: #4f46e5;
+      --accent-purple: #7c3aed;
+      --accent-pink: #db2777;
+      --accent-green: #059669;
+      --accent-amber: #d97706;
+      --accent-red: #dc2626;
+
+      --glow-cyan: rgba(2, 132, 199, 0.15);
+      --glow-purple: rgba(124, 58, 237, 0.15);
+
+      --radius-xl: 18px;
+      --radius-lg: 12px;
+      --radius-md: 8px;
+      --radius-sm: 6px;
+
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --macbook-aspect-ratio: 16 / 10;
+      --header-title-gradient: linear-gradient(135deg, #0f172a 0%, #334155 50%, #0284c7 100%);
+      --btn-bg: #f1f5f9;
+      --btn-hover-bg: #0284c7;
+      --btn-hover-text: #ffffff;
+      --canvas-frame-bg: #ffffff;
+
+      --badge-bg: rgba(2, 132, 199, 0.08);
+      --badge-border: rgba(2, 132, 199, 0.3);
+      --badge-color: #0284c7;
+
+      --output-bg: #f8fafc;
+      --output-border: #e2e8f0;
+      --output-lbl: #475569;
+      --output-val: #059669;
+
+      --takeaway-bg: rgba(2, 132, 199, 0.06);
+      --takeaway-border: rgba(2, 132, 199, 0.25);
+      --takeaway-text: #0f172a;
+
+      --pros-bg: rgba(5, 150, 105, 0.06);
+      --pros-border: rgba(5, 150, 105, 0.25);
+      --pros-text: #065f46;
+
+      --cons-bg: rgba(220, 38, 38, 0.06);
+      --cons-border: rgba(220, 38, 38, 0.25);
+      --cons-text: #991b1b;
+    }
+
+    [data-theme="dark"] {
+      --bg-dark: #07090e;
+      --bg-card: rgba(15, 23, 42, 0.85);
+      --bg-card-hover: rgba(30, 41, 59, 0.9);
+      --bg-card-border: rgba(255, 255, 255, 0.1);
+      --bg-card-border-active: rgba(0, 242, 254, 0.5);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-subtle: #64748b;
+      
+      --accent-cyan: #00f2fe;
+      --accent-blue: #38bdf8;
+      --accent-indigo: #818cf8;
+      --accent-purple: #c084fc;
+      --accent-pink: #f472b6;
+      --accent-green: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-red: #f87171;
+
+      --glow-cyan: rgba(0, 242, 254, 0.25);
+      --glow-purple: rgba(192, 132, 252, 0.25);
+
+      --header-title-gradient: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #00f2fe 100%);
+      --btn-bg: #1e293b;
+      --btn-hover-bg: #00f2fe;
+      --btn-hover-text: #07090e;
+      --canvas-frame-bg: #0f172a;
+
+      --badge-bg: rgba(0, 242, 254, 0.12);
+      --badge-border: rgba(0, 242, 254, 0.35);
+      --badge-color: #00f2fe;
+
+      --output-bg: #0f172a;
+      --output-border: rgba(255, 255, 255, 0.1);
+      --output-lbl: #94a3b8;
+      --output-val: #34d399;
+
+      --takeaway-bg: rgba(0, 242, 254, 0.08);
+      --takeaway-border: rgba(0, 242, 254, 0.3);
+      --takeaway-text: #f8fafc;
+
+      --pros-bg: rgba(16, 185, 129, 0.1);
+      --pros-border: rgba(16, 185, 129, 0.3);
+      --pros-text: #34d399;
+
+      --cons-bg: rgba(239, 68, 68, 0.1);
+      --cons-border: rgba(239, 68, 68, 0.3);
+      --cons-text: #f87171;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      min-height: 100vh;
+      background-image: 
+        radial-gradient(circle at 10% 15%, var(--glow-cyan) 0%, transparent 45%),
+        radial-gradient(circle at 90% 85%, var(--glow-purple) 0%, transparent 45%);
+      background-attachment: fixed;
+      padding-bottom: 24px;
+      overflow-x: hidden;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    .container {
+      max-width: 1512px;
+      margin: 0 auto;
+      padding: 16px 24px;
+    }
+
+    /* Header Styling */
+    header {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: var(--radius-xl);
+      padding: 14px 24px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      transition: background 0.3s ease, border-color 0.3s ease;
+    }
+
+    .header-title-group h1 {
+      font-size: 1.45rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      background: var(--header-title-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .preset-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .preset-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .preset-btn-group {
+      display: flex;
+      gap: 8px;
+    }
+
+    .preset-btn, .theme-btn {
+      background: var(--btn-bg);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-main);
+      padding: 7px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-btn:hover, .theme-btn:hover {
+      background: var(--btn-hover-bg);
+      color: var(--btn-hover-text);
+      border-color: var(--btn-hover-bg);
+      box-shadow: 0 2px 12px var(--glow-cyan);
+    }
+
+    .theme-btn {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      font-weight: 700;
+    }
+
+    /* Navigation Tabs */
+    .nav-tabs-container {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+
+    .tab-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-muted);
+      padding: 9px 16px;
+      border-radius: var(--radius-lg);
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tab-btn:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-main);
+      border-color: var(--accent-cyan);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-cyan);
+      color: #ffffff;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 4px 14px var(--glow-cyan);
+    }
+
+    [data-theme="dark"] .tab-btn.active {
+      color: #07090e;
+    }
+
+    .tab-num {
+      opacity: 0.7;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+
+    /* Topic Panel Main Layout Card */
+    .topic-panel {
+      display: none;
+    }
+
+    .topic-panel.active {
+      display: block;
+    }
+
+    .panel-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.03);
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--bg-card-border);
+    }
+
+    .panel-title-group h2 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .panel-title-group p {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    .header-badge {
+      background: var(--badge-bg);
+      border: 1px solid var(--badge-border);
+      color: var(--badge-color);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    /* Content Grid: Viewport + Controls */
+    .panel-content-grid {
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    @media (max-width: 1100px) {
+      .panel-content-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* Viewport Display Area */
+    .visual-viewport {
+      position: relative;
+      width: 100%;
+      aspect-ratio: var(--macbook-aspect-ratio);
+      background: var(--bg-dark);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--bg-card-border);
+    }
+
+    .viewport-overlay-badge {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      z-index: 10;
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Control & Math Section */
+    .control-math-section {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    /* Math Display Box */
+    .math-card {
+      background: var(--bg-dark);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      font-size: 0.84rem;
+    }
+
+    .math-card-title {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .math-display {
+      font-size: 0.85rem;
+      overflow-x: auto;
+      padding: 4px 0;
+    }
+
+    /* Controls Container Card */
+    .controls-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .slider-val {
+      font-family: var(--font-mono);
+      color: var(--accent-cyan);
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      background: var(--bg-card-border);
+      height: 5px;
+      border-radius: 3px;
+      outline: none;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      background: var(--accent-cyan);
+      cursor: pointer;
+      transition: transform 0.15s ease;
+      box-shadow: 0 0 6px var(--glow-cyan);
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.25);
+    }
+
+    /* Output Grid */
+    .output-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .output-item {
+      background: var(--output-bg);
+      border: 1px solid var(--output-border);
+      border-radius: var(--radius-md);
+      padding: 8px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .output-item-lbl {
+      font-size: 0.7rem;
+      color: var(--output-lbl);
+      font-weight: 500;
+    }
+
+    .output-item-val {
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--output-val);
+    }
+
+    /* Trade-offs Card (Pros vs Cons) */
+    .tradeoffs-card {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tradeoffs-header {
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--accent-amber);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tradeoffs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .tradeoffs-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .tradeoff-box {
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+      font-size: 0.78rem;
+      line-height: 1.4;
+    }
+
+    .tradeoff-box.pros {
+      background: var(--pros-bg);
+      border: 1px solid var(--pros-border);
+      color: var(--pros-text);
+    }
+
+    .tradeoff-box.cons {
+      background: var(--cons-bg);
+      border: 1px solid var(--cons-border);
+      color: var(--cons-text);
+    }
+
+    .tradeoff-box h4 {
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .tradeoff-box.pros h4 { color: var(--accent-green); }
+    .tradeoff-box.cons h4 { color: var(--accent-red); }
+
+    .tradeoff-box ul {
+      padding-left: 14px;
+    }
+
+    /* Key Intuition Takeaway Box */
+    .takeaway-box {
+      background: var(--takeaway-bg);
+      border: 1px solid var(--takeaway-border);
+      border-radius: var(--radius-lg);
+      padding: 12px 14px;
+      color: var(--takeaway-text);
+      font-size: 0.8rem;
+      line-height: 1.45;
+    }
+
+    .takeaway-box strong {
+      color: var(--accent-cyan);
+    }
+
+    /* Matrix rendering table */
+    .matrix-table {
+      margin: 6px auto;
+      border-collapse: collapse;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+    }
+
+    .matrix-bracket {
+      width: 6px;
+      border-top: 2px solid var(--accent-cyan);
+      border-bottom: 2px solid var(--accent-cyan);
+    }
+
+    .matrix-bracket:first-child {
+      border-left: 2px solid var(--accent-cyan);
+    }
+
+    .matrix-bracket:last-child {
+      border-right: 2px solid var(--accent-cyan);
+    }
+
+    .matrix-table td {
+      padding: 3px 6px;
+      text-align: center;
+    }
+
+    .matrix-cell-active {
+      background: var(--glow-cyan);
+      color: var(--accent-cyan);
+      font-weight: 700;
+      border-radius: 4px;
+    }
+
+    /* Panel 6 Mode Buttons */
+    .mode-tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .mode-tab-btn.active {
+      background: var(--accent-cyan);
+      color: #ffffff;
+    }
+
+    [data-theme="dark"] .mode-tab-btn.active {
+      color: #07090e;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Top Navigation Header -->
+  <header>
+    <div class="header-title-group">
+      <h1>
+        <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:26px; height:26px; color:var(--accent-cyan);">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        Camera Geometry & Stereo Math Studio
+      </h1>
+    </div>
+    
+    <div class="preset-toolbar">
+      <span class="preset-label">Presets:</span>
+      <div class="preset-btn-group">
+        <button class="preset-btn" onclick="applyPreset('standard')">Standard Pin-hole (f=800, B=0.12m)</button>
+        <button class="preset-btn" onclick="applyPreset('wide_extreme')">Wide-Angle & Extreme Stereo (f=220, B=0.65m)</button>
+      </div>
+      <button class="theme-btn" id="themeToggleBtn" onclick="toggleTheme()">☀️ Light Theme</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs-container" id="navTabs">
+    <button class="tab-btn active" onclick="switchTab(1)">
+      <span class="tab-num">01</span> Pinhole & Focal Length
+    </button>
+    <button class="tab-btn" onclick="switchTab(2)">
+      <span class="tab-num">02</span> Intrinsic Matrix (K)
+    </button>
+    <button class="tab-btn" onclick="switchTab(3)">
+      <span class="tab-num">03</span> Extrinsic Matrix ([R|t])
+    </button>
+    <button class="tab-btn" onclick="switchTab(4)">
+      <span class="tab-num">04</span> Projection Pipeline P = K[R|t]
+    </button>
+    <button class="tab-btn" onclick="switchTab(5)">
+      <span class="tab-num">05</span> Stereo Baseline & Disparity
+    </button>
+    <button class="tab-btn" onclick="switchTab(6)">
+      <span class="tab-num">06</span> Epipolar Geometry (E & F)
+    </button>
+    <button class="tab-btn" onclick="switchTab(7)">
+      <span class="tab-num">07</span> Lens Distortion
+    </button>
+    <button class="tab-btn" onclick="switchTab(8)">
+      <span class="tab-num">08</span> 3D Triangulation Sandbox
+    </button>
+    <button class="tab-btn" onclick="switchTab(9)">
+      <span class="tab-num">09</span> Homogeneous Coordinates Intuition
+    </button>
+  </div>
+
+  <!-- Main Dashboard Grid -->
+  <div class="dashboard-grid">
+
+    <!-- PANEL 01: PINHOLE MODEL & FOCAL LENGTH -->
+    <div class="topic-panel active" id="panel-1">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>01. The Pinhole Camera Model & Focal Length ($f$)</h2>
+            <p>Understand how 3D world points project onto a 2D image plane via optical ray geometry.</p>
+          </div>
+          <span class="header-badge">Fundamental Optics</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportPinhole">
+            <span class="viewport-overlay-badge">Interactive 2D Optics Ray Tracer (16:10 Retina)</span>
+            <canvas id="canvasPinhole" width="650" height="406"></canvas>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">Pinhole Projection Equation</div>
+              <div class="math-display">
+                $$y_{pixel} = f \cdot \frac{Y}{Z} + c_y \quad (c_y = 0\text{ px at Origin})$$
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Focal Length ($f$ in pixels):</span>
+                  <span class="slider-val" id="p1_f_val">800 px</span>
+                </div>
+                <input type="range" id="p1_f" min="150" max="1200" value="800" oninput="updatePanel1()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Object Distance ($Z$ in meters):</span>
+                  <span class="slider-val" id="p1_Z_val">3.5 m</span>
+                </div>
+                <input type="range" id="p1_Z" min="0.5" max="8.0" step="0.1" value="3.5" oninput="updatePanel1()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Object Height ($Y$ in meters):</span>
+                  <span class="slider-val" id="p1_Y_val">0.3 m</span>
+                </div>
+                <input type="range" id="p1_Y" min="-2.0" max="2.0" step="0.1" value="0.3" oninput="updatePanel1()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Principal Point Offset ($c_y$):</span>
+                  <span class="slider-val" id="p1_cy_val">0 px</span>
+                </div>
+                <input type="range" id="p1_cy" min="-100" max="100" value="0" step="1" oninput="updatePanel1()">
+              </div>
+
+              <div class="output-grid">
+                <div class="output-item">
+                  <span class="output-item-lbl">Image Plane Height ($y$)</span>
+                  <span class="output-item-val" id="p1_y_img">68.6 px</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Final Pixel Coordinate ($v$)</span>
+                  <span class="output-item-val" id="p1_v_pixel">68.6 px</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Magnification Factor ($f/Z$)</span>
+                  <span class="output-item-val" id="p1_mag">228.6 px/m</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Pinhole Model vs Depth Hardware
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Pinhole Model)</h4>
+                  <ul>
+                    <li>Works with standard, low-cost RGB CMOS image sensors.</li>
+                    <li>Simple, elegant linear optics geometry used across all 3D vision algorithms.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs ToF / LiDAR)</h4>
+                  <ul>
+                    <li>Loses 3D depth dimension ($Z$) during 2D flattening.</li>
+                    <li>Suffers from scale ambiguity (near small objects look identical to far large objects).</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Key Intuition:</strong> Focal length ($f$) is the physical distance between the optical center (pinhole) and the sensor plane, expressed in pixel units. Increasing $f$ zooms in on distant objects, while decreasing distance $Z$ makes objects appear larger on the sensor.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 02: INTRINSIC MATRIX K -->
+    <div class="topic-panel" id="panel-2">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>02. The Camera Intrinsic Matrix ($\mathbf{K}_{3 \times 4}$ Homogeneous Form)</h2>
+            <p>Map 3D homogeneous camera coordinates $(X_c, Y_c, Z_c, 1)^T$ directly to 2D pixel coordinates $(u, v)$.</p>
+          </div>
+          <span class="header-badge">Internal Calibration</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportIntrinsic">
+            <span class="viewport-overlay-badge">Live Sensor Grid Viewport (Width x Height)</span>
+            <canvas id="canvasIntrinsic" width="650" height="406"></canvas>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">Intrinsic Matrix Homogeneous Formulation ($3 \times 4$)</div>
+              <div class="math-display">
+                $$\mathbf{K}_{3 \times 4} = \begin{bmatrix} f_x & s & c_x & 0 \\ 0 & f_y & c_y & 0 \\ 0 & 0 & 1 & 0 \end{bmatrix}, \quad Z_c \begin{bmatrix} u \\ v \\ 1 \end{bmatrix} = \mathbf{K}_{3 \times 4} \begin{bmatrix} X_c \\ Y_c \\ Z_c \\ 1 \end{bmatrix}$$
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Focal Length $f_x$:</span>
+                  <span class="slider-val" id="p2_fx_val">800 px</span>
+                </div>
+                <input type="range" id="p2_fx" min="100" max="1200" value="800" oninput="updatePanel2()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Focal Length $f_y$:</span>
+                  <span class="slider-val" id="p2_fy_val">800 px</span>
+                </div>
+                <input type="range" id="p2_fy" min="100" max="1200" value="800" oninput="updatePanel2()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Axis Skew $s$:</span>
+                  <span class="slider-val" id="p2_s_val">0.0</span>
+                </div>
+                <input type="range" id="p2_s" min="-50" max="50" step="0.5" value="0" oninput="updatePanel2()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Principal Point $c_x$:</span>
+                  <span class="slider-val" id="p2_cx_val">320 px</span>
+                </div>
+                <input type="range" id="p2_cx" min="0" max="640" value="320" oninput="updatePanel2()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Principal Point $c_y$:</span>
+                  <span class="slider-val" id="p2_cy_val">240 px</span>
+                </div>
+                <input type="range" id="p2_cy" min="0" max="480" value="240" oninput="updatePanel2()">
+              </div>
+
+              <div class="math-card">
+                <div class="math-card-title">Live Homogeneous Matrix K (3x4)</div>
+                <div id="p2_matrix_display"></div>
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Intrinsic Matrix vs Hardware Sensors
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Intrinsic Matrix)</h4>
+                  <ul>
+                    <li>Provides exact metric pixel-to-ray 3D casting calibration.</li>
+                    <li>Standard offline calibration toolkits available (OpenCV / Kalibr).</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs Solid-State LiDAR)</h4>
+                  <ul>
+                    <li>Sensitive to thermal lens expansion and mechanical focus shifts over time.</li>
+                    <li>Direct range sensors (LiDAR/ToF) measure distances without needing optical intrinsic parameters.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Key Intuition:</strong> The $3 \times 4$ Homogeneous Intrinsic Matrix $\mathbf{K}_{3 \times 4} = [\mathbf{K}_{3 \times 3} \mid \mathbf{0}_{3 \times 1}]$ allows multiplying directly with $4 \times 1$ homogeneous 3D camera coordinates $[X_c, Y_c, Z_c, 1]^T$, eliminating matrix dimension mismatch when chaining camera pose transformations.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 03: EXTRINSIC MATRIX [R|t] -->
+    <div class="topic-panel" id="panel-3">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>03. The Camera Extrinsic Matrix ($[\mathbf{R} \mid \mathbf{t}]_{3 \times 4}$)</h2>
+            <p>Transform 3D points from World Reference Coordinates into Camera Body Coordinates.</p>
+          </div>
+          <span class="header-badge">Camera Pose & 3D Rigidity</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportExtrinsic">
+            <span class="viewport-overlay-badge">Interactive 3D Camera Pose Viewport (Drag to Rotate)</span>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">Extrinsic Rigid Transformation</div>
+              <div class="math-display">
+                $$\mathbf{P}_{cam} = \mathbf{R} \mathbf{P}_{world} + \mathbf{t} = \begin{bmatrix} \mathbf{R}_{3 \times 3} & \mathbf{t}_{3 \times 1} \end{bmatrix} \begin{bmatrix} \mathbf{P}_{world} \\ 1 \end{bmatrix}$$
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Rotation Pitch ($\theta_x$):</span>
+                  <span class="slider-val" id="p3_pitch_val">0°</span>
+                </div>
+                <input type="range" id="p3_pitch" min="-90" max="90" value="0" oninput="updatePanel3()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Rotation Yaw ($\theta_y$):</span>
+                  <span class="slider-val" id="p3_yaw_val">0°</span>
+                </div>
+                <input type="range" id="p3_yaw" min="-90" max="90" value="0" oninput="updatePanel3()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Rotation Roll ($\theta_z$):</span>
+                  <span class="slider-val" id="p3_roll_val">0°</span>
+                </div>
+                <input type="range" id="p3_roll" min="-90" max="90" value="0" oninput="updatePanel3()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Translation $t_x$:</span>
+                  <span class="slider-val" id="p3_tx_val">0.0 m</span>
+                </div>
+                <input type="range" id="p3_tx" min="-3.0" max="3.0" step="0.1" value="0.0" oninput="updatePanel3()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Translation $t_y$:</span>
+                  <span class="slider-val" id="p3_ty_val">0.0 m</span>
+                </div>
+                <input type="range" id="p3_ty" min="-3.0" max="3.0" step="0.1" value="0.0" oninput="updatePanel3()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Translation $t_z$:</span>
+                  <span class="slider-val" id="p3_tz_val">2.5 m</span>
+                </div>
+                <input type="range" id="p3_tz" min="0.5" max="6.0" step="0.1" value="2.5" oninput="updatePanel3()">
+              </div>
+
+              <div class="math-card">
+                <div class="math-card-title">Live Extrinsic Matrix [R | t] (3x4)</div>
+                <div id="p3_matrix_display"></div>
+              </div>
+
+              <div class="output-grid">
+                <div class="output-item">
+                  <span class="output-item-lbl">Camera Center in World ($C_w$)</span>
+                  <span class="output-item-val" id="p3_cw_val">[0.0, 0.0, -2.5]</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Visual Extrinsics vs Hardware IMU/GPS
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Visual Extrinsics)</h4>
+                  <ul>
+                    <li>Enables 6-DOF relative motion tracking (Visual Odometry / SLAM).</li>
+                    <li>Allows multi-camera rig coordinate alignment without extra hardware.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs Hardware IMU/GPS)</h4>
+                  <ul>
+                    <li>Pure visual pose estimation drifts in featureless environments (white walls, motion blur).</li>
+                    <li>Requires active loop closure to eliminate accumulated odometry drift.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Key Intuition:</strong> $\mathbf{R}$ rotates world axes to align with camera optical axes (Z-forward, X-right, Y-down), while $\mathbf{t}$ translates the origin. Camera position in world space is given by $\mathbf{C}_{world} = -\mathbf{R}^T \mathbf{t}$.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 04: PROJECTION PIPELINE P = K[R|t] -->
+    <div class="topic-panel" id="panel-4">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>04. Complete Projection Pipeline Matrix ($\mathbf{P} = \mathbf{K} [\mathbf{R} \mid \mathbf{t}]$)</h2>
+            <p>The step-by-step mathematical chain connecting 3D World Space to 2D Screen Pixels.</p>
+          </div>
+          <span class="header-badge">Unified Projection Chain</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportPipeline">
+            <span class="viewport-overlay-badge">Full Transformation Pipeline Diagram</span>
+            <canvas id="canvasPipeline" width="650" height="406"></canvas>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">Full 3x4 Camera Projection Matrix</div>
+              <div class="math-display">
+                $$\mathbf{P}_{3 \times 4} = \mathbf{K}_{3 \times 3} \begin{bmatrix} \mathbf{R}_{3 \times 3} & \mathbf{t}_{3 \times 1} \end{bmatrix}$$
+                $$\begin{bmatrix} u \cdot Z_c \\ v \cdot Z_c \\ Z_c \end{bmatrix} = \mathbf{P}_{3 \times 4} \begin{bmatrix} X_w \\ Y_w \\ Z_w \\ 1 \end{bmatrix}$$
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div class="math-card-title">Live 3D Point Input ($P_{world}$)</div>
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">World $X_w$:</span>
+                  <span class="slider-val" id="p4_xw_val">0.5 m</span>
+                </div>
+                <input type="range" id="p4_xw" min="-5.0" max="5.0" step="0.1" value="0.5" oninput="updatePanel4()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">World $Y_w$:</span>
+                  <span class="slider-val" id="p4_yw_val">0.3 m</span>
+                </div>
+                <input type="range" id="p4_yw" min="-5.0" max="5.0" step="0.1" value="0.3" oninput="updatePanel4()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">World $Z_w$:</span>
+                  <span class="slider-val" id="p4_zw_val">3.5 m</span>
+                </div>
+                <input type="range" id="p4_zw" min="0.5" max="10.0" step="0.1" value="3.5" oninput="updatePanel4()">
+              </div>
+
+              <div class="math-card">
+                <div class="math-card-title">Full Projection Matrix P (3x4)</div>
+                <div id="p4_matrix_display"></div>
+              </div>
+
+              <div class="output-grid">
+                <div class="output-item">
+                  <span class="output-item-lbl">Step 1: Camera Space $P_{cam}$</span>
+                  <span class="output-item-val" id="p4_pcam_val">[0.50, 0.30, 3.50]</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Step 2: Normalized $(x', y')$</span>
+                  <span class="output-item-val" id="p4_norm_val">[0.143, 0.086]</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Step 3: Pixel Coord $(u, v)$</span>
+                  <span class="output-item-val" id="p4_px_val">[391, 283]</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Projection Matrix vs Depth Hardware
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Projection Chain)</h4>
+                  <ul>
+                    <li>Extremely efficient single $3 \times 4$ matrix operation for GPU rasterization.</li>
+                    <li>Seamlessly unifies world pose, camera body, and pixel coordinates.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs RGB-D Sensors)</h4>
+                  <ul>
+                    <li>Non-invertible forward projection (3D to 2D discards depth metric).</li>
+                    <li>Requires multi-view triangulation or active sensors to reconstruct 3D back.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Key Intuition:</strong> Multiplying world point $P_{world}$ by $\mathbf{P}$ maps 3D homogeneous coordinates directly to pixel homogeneous coordinates $[u \cdot Z_c, v \cdot Z_c, Z_c]^T$. Dividing by $Z_c$ performs the essential perspective projection.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 05: STEREO BASELINE & DISPARITY -->
+    <div class="topic-panel" id="panel-5">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>05. Stereo Vision, Baseline ($B$), Disparity ($d$) & Depth ($Z$)</h2>
+            <p>How horizontal shift between parallel left/right cameras encodes physical depth $Z = \frac{f \cdot B}{d}$.</p>
+          </div>
+          <span class="header-badge">Stereo Triangulation</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportStereo">
+            <span class="viewport-overlay-badge">Stereo Epipolar Geometry & Depth Hyperbola</span>
+            <canvas id="canvasStereo" width="650" height="406"></canvas>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">Stereo Depth & Disparity Equations</div>
+              <div class="math-display">
+                $$d = x_L - x_R, \quad Z = \frac{f \cdot B}{d + doffs}$$
+                $$\Delta Z \approx \frac{Z^2}{f \cdot B} \Delta d \quad (\text{Depth Error Sensitivity})$$
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Baseline Distance ($B$ in meters):</span>
+                  <span class="slider-val" id="p5_B_val">0.12 m</span>
+                </div>
+                <input type="range" id="p5_B" min="0.02" max="0.50" step="0.01" value="0.12" oninput="updatePanel5()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Focal Length ($f$ in pixels):</span>
+                  <span class="slider-val" id="p5_f_val">700 px</span>
+                </div>
+                <input type="range" id="p5_f" min="300" max="1500" step="10" value="700" oninput="updatePanel5()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Target Depth ($Z$ in meters):</span>
+                  <span class="slider-val" id="p5_Z_val">2.5 m</span>
+                </div>
+                <input type="range" id="p5_Z" min="0.5" max="8.0" step="0.1" value="2.5" oninput="updatePanel5()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Disparity Offset ($doffs$):</span>
+                  <span class="slider-val" id="p5_doffs_val">0.0 px</span>
+                </div>
+                <input type="range" id="p5_doffs" min="-20" max="20" value="0" oninput="updatePanel5()">
+              </div>
+
+              <div class="output-grid">
+                <div class="output-item">
+                  <span class="output-item-lbl">Disparity ($d = x_L - x_R$)</span>
+                  <span class="output-item-val" id="p5_disp_val">33.6 px</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Calculated Depth ($Z$)</span>
+                  <span class="output-item-val" id="p5_calc_z">2.50 m</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Depth Error per 1px Disparity</span>
+                  <span class="output-item-val" id="p5_err_val">± 0.074 m</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Passive Stereo vs Active Depth Sensors (LiDAR/ToF)
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Passive Stereo)</h4>
+                  <ul>
+                    <li>Operates outdoors under direct bright sunlight (where IR structured light fails).</li>
+                    <li>Low hardware cost using dual standard CMOS sensors; high RGB-depth alignment.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs Active LiDAR/ToF)</h4>
+                  <ul>
+                    <li>Fails on textureless surfaces (blank walls, uniform sky).</li>
+                    <li>Quadratic depth error decay ($\Delta Z \propto Z^2 / fB$ makes distant targets inaccurate).</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Key Intuition:</strong> Disparity $d$ is inversely proportional to depth $Z$. Close objects have high disparity (large shift), distant objects have small disparity. Notice how depth error scales quadratically ($\Delta Z \propto Z^2$), making far objects less precise!
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 06: EPIPOLAR GEOMETRY (E & F MATRICES) -->
+    <div class="topic-panel" id="panel-6">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>06. Epipolar Geometry, Essential ($\mathbf{E}$) & Fundamental ($\mathbf{F}$) Matrices</h2>
+            <p>Master multi-view geometric constraints: 3D epipolar planes, epipoles ($e_L, e_R$), 1D scanline reduction, matrix derivations ($\mathbf{E}$ & $\mathbf{F}$), Hartley 8-Point Algorithm, and SVD pose recovery.</p>
+          </div>
+          <span class="header-badge">Multi-View Geometry</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportEpipolar">
+            <div style="position: absolute; top: 12px; left: 12px; z-index: 10; display: flex; gap: 6px; background: var(--bg-card); border: 1px solid var(--bg-card-border); padding: 4px; border-radius: 8px;">
+              <button class="mode-tab-btn active" id="p6_mode_3d" onclick="setPanel6Mode('3d')">3D Epipolar Rays & Plane</button>
+              <button class="mode-tab-btn" id="p6_mode_2d" onclick="setPanel6Mode('2d')">2D Search & Correspondences</button>
+              <button class="mode-tab-btn" id="p6_mode_rect" onclick="setPanel6Mode('rect')">Unrectified vs Rectified</button>
+            </div>
+            <span class="viewport-overlay-badge" id="p6_viewport_title" style="top: 12px; right: 12px; left: auto;">3D Optical Geometry: Camera Centers C_L, C_R, Baseline & Epipolar Plane</span>
+            <canvas id="canvasEpipolar" width="650" height="406"></canvas>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">Core Epipolar Algebraic Constraints</div>
+              <div class="math-display">
+                $$\mathbf{x}_R^T \mathbf{E} \mathbf{x}_L = 0 \quad (\text{Calibrated Rays}) \quad \iff \quad \mathbf{p}_R^T \mathbf{F} \mathbf{p}_L = 0 \quad (\text{Raw Pixels})$$
+                $$\mathbf{l}_R = \mathbf{F} \mathbf{p}_L = [a, b, c]^T \implies a \cdot u_R + b \cdot v_R + c = 0$$
+                $$\mathbf{F} \mathbf{e}_L = \mathbf{0}, \quad \mathbf{e}_R^T \mathbf{F} = \mathbf{0} \quad (\text{Epipoles as Null-Space Vectors})$$
+              </div>
+            </div>
+
+            <div class="math-card" style="border-color: rgba(124, 58, 237, 0.4);">
+              <div class="math-card-title" style="color: var(--accent-purple);">
+                Live Calculated Matrix E, F & Epipoles ($e_L, e_R$)
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 6px;">
+                <div>
+                  <div style="font-size: 0.72rem; color: var(--accent-cyan); text-align: center; margin-bottom: 4px; font-weight: 600;">Essential Matrix $\mathbf{E} = [\mathbf{t}]_\times \mathbf{R}$</div>
+                  <div id="p6_matrix_E_display"></div>
+                </div>
+                <div>
+                  <div style="font-size: 0.72rem; color: var(--accent-purple); text-align: center; margin-bottom: 4px; font-weight: 600;">Fundamental Matrix $\mathbf{F} = \mathbf{K}_R^{-T} \mathbf{E} \mathbf{K}_L^{-1}$</div>
+                  <div id="p6_matrix_F_display"></div>
+                </div>
+              </div>
+              
+              <div class="output-grid" style="margin-top: 10px; grid-template-columns: 1fr 1fr 1fr;">
+                <div class="output-item">
+                  <span class="output-item-lbl">Left Epipole $e_L$</span>
+                  <span class="output-item-val" id="p6_epipole_L">[-2683, 57]</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Right Epipole $e_R$</span>
+                  <span class="output-item-val" id="p6_epipole_R">[2983, 57]</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Epipolar Constraint Test</span>
+                  <span class="output-item-val" id="p6_epipolar_err" style="color: var(--accent-green);">0.0000 (Satisfied)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span class="math-card-title" style="margin: 0;">Interactive Camera & Ray Parameters</span>
+                <label style="font-size: 0.78rem; color: var(--accent-cyan); font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+                  <input type="checkbox" id="p6_rectified_check" onchange="updatePanel6()" style="width:16px; height:16px; cursor:pointer;">
+                  Force Rectified Rig ($\mathbf{R} = \mathbf{I}, e \to \infty$)
+                </label>
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Left Image Point X ($p_L.x$):</span>
+                  <span class="slider-val" id="p6_px_val">220 px</span>
+                </div>
+                <input type="range" id="p6_px" min="40" max="300" value="220" oninput="updatePanel6()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Left Image Point Y ($p_L.y$):</span>
+                  <span class="slider-val" id="p6_py_val">180 px</span>
+                </div>
+                <input type="range" id="p6_py" min="40" max="360" value="180" oninput="updatePanel6()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Camera Relative Yaw Angle ($\theta_y$):</span>
+                  <span class="slider-val" id="p6_tilt_val">5.0°</span>
+                </div>
+                <input type="range" id="p6_tilt" min="-25" max="25" step="0.5" value="5.0" oninput="updatePanel6()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Camera Relative Pitch Angle ($\theta_x$):</span>
+                  <span class="slider-val" id="p6_pitch_val">3.0°</span>
+                </div>
+                <input type="range" id="p6_pitch" min="-15" max="15" step="0.5" value="3.0" oninput="updatePanel6()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Camera Relative Roll Angle ($\theta_z$):</span>
+                  <span class="slider-val" id="p6_roll_val">2.0°</span>
+                </div>
+                <input type="range" id="p6_roll" min="-15" max="15" step="0.5" value="2.0" oninput="updatePanel6()">
+              </div>
+
+              <div class="output-grid">
+                <div class="output-item">
+                  <span class="output-item-lbl">Right Epipolar Line Equation ($a u + b v + c = 0$)</span>
+                  <span class="output-item-val" id="p6_line_eq">0.00u - 1.00v + 180 = 0</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Epipolar Search vs 2D Matching
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Epipolar Constraint)</h4>
+                  <ul>
+                    <li>Reduces 2D correspondence search to 1D search along epipolar lines (100x search speedup).</li>
+                    <li>$\mathbf{E}$ and $\mathbf{F}$ matrices can be estimated directly from uncalibrated image pairs.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs Direct Depth Sensors)</h4>
+                  <ul>
+                    <li>Requires sufficient camera motion (pure rotation degenerates $\mathbf{E}$ and baseline collapses).</li>
+                    <li>Degenerate configurations (planar scenes) cause 8-point algorithm instability.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Key Intuition:</strong> Epipolar geometry enforces that any 3D point $P$, left optical center $C_L$, and right optical center $C_R$ lie on a single 3D plane (the **epipolar plane**). This guarantees that matching a left pixel $p_L$ requires searching ONLY along the 1D epipolar line $l_R = \mathbf{F} p_L$ in the right image!
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 07: LENS DISTORTION -->
+    <div class="topic-panel" id="panel-7">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>07. Camera Lens Distortion (Radial & Tangential)</h2>
+            <p>Model non-ideal optical physical lens distortion effects ($k_1, k_2, k_3, p_1, p_2$).</p>
+          </div>
+          <span class="header-badge">Optical Realism</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportDistortion">
+            <span class="viewport-overlay-badge">Distorted Grid Viewport (Ideal vs Distorted Sensor Grid)</span>
+            <canvas id="canvasDistortion" width="650" height="406"></canvas>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">Brown-Conrady Distortion Model</div>
+              <div class="math-display">
+                $$x_{dist} = x (1 + k_1 r^2 + k_2 r^4) + [2 p_1 x y + p_2 (r^2 + 2x^2)]$$
+                $$y_{dist} = y (1 + k_1 r^2 + k_2 r^4) + [p_1 (r^2 + 2y^2) + 2 p_2 x y]$$
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Radial Distortion $k_1$ (Barrel < 0 < Pincushion):</span>
+                  <span class="slider-val" id="p7_k1_val">-0.35</span>
+                </div>
+                <input type="range" id="p7_k1" min="-1.0" max="1.0" step="0.05" value="-0.35" oninput="updatePanel7()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Radial Distortion $k_2$:</span>
+                  <span class="slider-val" id="p7_k2_val">0.10</span>
+                </div>
+                <input type="range" id="p7_k2" min="-0.5" max="0.5" step="0.02" value="0.10" oninput="updatePanel7()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Tangential Distortion $p_1$:</span>
+                  <span class="slider-val" id="p7_p1_val">0.00</span>
+                </div>
+                <input type="range" id="p7_p1" min="-0.2" max="0.2" step="0.01" value="0.00" oninput="updatePanel7()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Tangential Distortion $p_2$:</span>
+                  <span class="slider-val" id="p7_p2_val">0.00</span>
+                </div>
+                <input type="range" id="p7_p2" min="-0.2" max="0.2" step="0.01" value="0.00" oninput="updatePanel7()">
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Distortion Rectification vs Optical Lenses
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Polynomial Model)</h4>
+                  <ul>
+                    <li>Allows wide-angle & fisheye lenses to capture huge FOV while software-rectifying straight lines.</li>
+                    <li>Pure software correction avoiding expensive custom aberration-free physical optics.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs Direct Depth Sensors)</h4>
+                  <ul>
+                    <li>Rectification distorts pixel resolution near edges and crops image borders.</li>
+                    <li>Sub-pixel interpolation during unwarping introduces slight image blurring.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Key Intuition:</strong> Radial distortion ($k_1, k_2$) curves straight lines near image edges (negative values cause **barrel distortion**, positive values cause **pincushion distortion**). Tangential distortion ($p_1, p_2$) occurs when lens elements are not perfectly parallel to the image sensor.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 08: 3D TRIANGULATION SANDBOX -->
+    <div class="topic-panel" id="panel-8">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>08. Interactive 3D Stereo Triangulation Sandbox</h2>
+            <p>Place 3D target points in virtual space, simulate stereo projection, and measure reconstructed 3D points.</p>
+          </div>
+          <span class="header-badge">Full Interactive Sandbox</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportTriangulation">
+            <span class="viewport-overlay-badge">3D World View: Stereo Pair C_L / C_R & Target Object</span>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">Real-Time Stereo Reconstruction Metrics</div>
+              <div class="output-grid">
+                <div class="output-item">
+                  <span class="output-item-lbl">True World 3D Point P</span>
+                  <span class="output-item-val" id="p8_true_pt">[0.30, 0.20, 2.80]</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Left Pixel $(u_L, v_L)$</span>
+                  <span class="output-item-val" id="p8_left_px">[400, 290]</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Right Pixel $(u_R, v_R)$</span>
+                  <span class="output-item-val" id="p8_right_px">[370, 290]</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Computed Disparity ($d$)</span>
+                  <span class="output-item-val" id="p8_disp">34.3 px</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Reconstructed 3D Depth ($Z_{rec}$)</span>
+                  <span class="output-item-val" id="p8_rec_z">2.80 m</span>
+                </div>
+                <div class="output-item">
+                  <span class="output-item-lbl">Reconstruction Error</span>
+                  <span class="output-item-val" id="p8_err">0.000 m</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Baseline Distance ($B$):</span>
+                  <span class="slider-val" id="p8_b_val">0.12 m</span>
+                </div>
+                <input type="range" id="p8_b" min="0.05" max="1.0" step="0.01" value="0.12" oninput="updatePanel8()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Focal Length ($f$):</span>
+                  <span class="slider-val" id="p8_f_val">800 px</span>
+                </div>
+                <input type="range" id="p8_f" min="200" max="1200" value="800" oninput="updatePanel8()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Pixel Noise ($\sigma$):</span>
+                  <span class="slider-val" id="p8_noise_val">0.0 px</span>
+                </div>
+                <input type="range" id="p8_noise" min="0.0" max="5.0" step="0.1" value="0.0" oninput="updatePanel8()">
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Passive Triangulation vs LiDAR Point Cloud
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Passive Triangulation)</h4>
+                  <ul>
+                    <li>No active emissions (laser-safe, stealthy, low power consumption).</li>
+                    <li>Generates dense 3D point cloud naturally aligned with RGB texture colors.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs Solid-State LiDAR)</h4>
+                  <ul>
+                    <li>Occlusion masking holes (features visible in Left view may be blocked in Right view).</li>
+                    <li>Slower real-time performance due to high-dimensional matching complexity.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Complete Closed-Loop Pipeline:</strong> 
+              1. 3D Point $P(X,Y,Z)$ is projected into Left & Right cameras via $\mathbf{P}_L, \mathbf{P}_R$.<br>
+              2. Disparity $d = u_L - u_R$ is measured.<br>
+              3. Triangulation recovers 3D spatial coordinates: $Z = \frac{f \cdot B}{d}$, $X = \frac{(u_L - c_x) B}{d}$, $Y = \frac{(v_L - c_y) B}{d}$.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL 09: HOMOGENEOUS COORDINATES INTUITION -->
+    <div class="topic-panel" id="panel-9">
+      <div class="panel-card">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <h2>09. Mathematical Intuition: Why Homogeneous Coordinates?</h2>
+            <p>Understand why 4D projective space $(X, Y, Z, W)^T$ is essential for camera matrices and computer vision.</p>
+          </div>
+          <span class="header-badge">Mathematical Foundations</span>
+        </div>
+
+        <div class="panel-content-grid">
+          <div class="visual-viewport" id="viewportHomogeneous">
+            <span class="viewport-overlay-badge">Interactive 4D Projective Ray to 3D Cartesian Projection</span>
+            <canvas id="canvasHomogeneous" width="650" height="406"></canvas>
+          </div>
+
+          <div class="control-math-section">
+            <div class="math-card">
+              <div class="math-card-title">1. Homogeneous Vector Definition & Scale Invariance</div>
+              <div class="math-display">
+                $$\mathbf{P}_{euclidean} = \begin{bmatrix} X \\ Y \\ Z \end{bmatrix} \iff \tilde{\mathbf{P}}_{homo} = \begin{bmatrix} X \\ Y \\ Z \\ W \end{bmatrix} \equiv \begin{bmatrix} X/W \\ Y/W \\ Z/W \\ 1 \end{bmatrix}$$
+              </div>
+            </div>
+
+            <div class="math-card">
+              <div class="math-card-title">2. Linearizing Translation into Matrix Multiplication</div>
+              <div class="math-display">
+                $$\begin{bmatrix} \mathbf{P}_{cam} \\ 1 \end{bmatrix} = \begin{bmatrix} \mathbf{R}_{3 \times 3} & \mathbf{t}_{3 \times 1} \\ \mathbf{0}^T & 1 \end{bmatrix} \begin{bmatrix} \mathbf{P}_{world} \\ 1 \end{bmatrix}$$
+              </div>
+            </div>
+
+            <div class="math-card">
+              <div class="math-card-title">3. Unified Matrix Composition ($\mathbf{P} = \mathbf{K} [\mathbf{R} \mid \mathbf{t}]$)</div>
+              <div class="math-display">
+                $$\begin{bmatrix} u \cdot Z_c \\ v \cdot Z_c \\ Z_c \end{bmatrix} = \mathbf{P}_{3 \times 4} \begin{bmatrix} X_w \\ Y_w \\ Z_w \\ 1 \end{bmatrix}$$
+              </div>
+            </div>
+
+            <div class="controls-card">
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Homogeneous Scale Factor $W$:</span>
+                  <span class="slider-val" id="p9_w_val">1.00</span>
+                </div>
+                <input type="range" id="p9_w" min="0.1" max="3.0" step="0.05" value="1.00" oninput="updatePanel9()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Homogeneous $X$:</span>
+                  <span class="slider-val" id="p9_x_val">1.20</span>
+                </div>
+                <input type="range" id="p9_x" min="-4.0" max="4.0" step="0.1" value="1.20" oninput="updatePanel9()">
+              </div>
+
+              <div class="slider-group">
+                <div class="slider-header">
+                  <span class="slider-label">Homogeneous $Y$:</span>
+                  <span class="slider-val" id="p9_y_val">0.80</span>
+                </div>
+                <input type="range" id="p9_y" min="-4.0" max="4.0" step="0.1" value="0.80" oninput="updatePanel9()">
+              </div>
+
+              <div class="output-grid">
+                <div class="output-item">
+                  <span class="output-item-lbl">Normalized Euclidean Point $(X/W, Y/W)$</span>
+                  <span class="output-item-val" id="p9_euclid_res">(1.20, 0.80)</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="tradeoffs-card">
+              <div class="tradeoffs-header">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Technique Trade-offs: Homogeneous Coordinates vs 3D Euclidean Space
+              </div>
+              <div class="tradeoffs-grid">
+                <div class="tradeoff-box pros">
+                  <h4>✓ Strengths (Homogeneous Space)</h4>
+                  <ul>
+                    <li>Converts non-linear vector addition ($\mathbf{R} \mathbf{x} + \mathbf{t}$) into a single linear matrix multiplication.</li>
+                    <li>Represents points at infinity ($W=0$) cleanly without division-by-zero crashes.</li>
+                  </ul>
+                </div>
+                <div class="tradeoff-box cons">
+                  <h4>✕ Weaknesses (vs 3D Euclidean)</h4>
+                  <ul>
+                    <li>Adds an extra dimension to all vectors ($4 \times 1$ instead of $3 \times 1$).</li>
+                    <li>Requires explicit projective normalization (dividing by $W$ or $Z$) to return to physical 3D space.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="takeaway-box">
+              <strong>Key Intuition:</strong> Homogeneous coordinates embed $N$-dimensional space into $(N+1)$-dimensional projective space. This allows translation and perspective division to be expressed as linear matrix multiplications, making camera projection chains ($\mathbf{P} = \mathbf{K}[\mathbf{R} \mid \mathbf{t}]$) unified and GPU-accelerated.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  let activeTab = 1;
+  let p6_current_mode = '3d';
+  let p6_scan_phase = 0;
+  let p6_anim_id = null;
+
+  function getThemeColors() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    if (isDark) {
+      return {
+        bgCanvas: '#0b0f19',
+        cardFrameBg: '#0f172a',
+        textMain: '#f8fafc',
+        textMuted: '#94a3b8',
+        textSubtle: '#64748b',
+        border: 'rgba(255, 255, 255, 0.15)',
+        grid: 'rgba(255, 255, 255, 0.08)',
+        cyan: '#00f2fe',
+        blue: '#38bdf8',
+        indigo: '#818cf8',
+        purple: '#c084fc',
+        pink: '#f472b6',
+        green: '#34d399',
+        amber: '#fbbf24',
+        red: '#f87171',
+        pinholeBg: '#f8fafc',
+        opticalRay: '#38bdf8',
+        cameraFrustum: '#00f2fe',
+        sensorPlane: '#00f2fe',
+        epipolarPlane: 'rgba(192, 132, 252, 0.2)',
+        epipolarLine: '#f472b6',
+        point3D: '#34d399',
+        point2D: '#fbbf24',
+        threeBg: 0x07090e,
+        threeGrid: 0x334155,
+      };
+    } else {
+      return {
+        bgCanvas: '#ffffff',
+        cardFrameBg: '#ffffff',
+        textMain: '#0f172a',
+        textMuted: '#475569',
+        textSubtle: '#64748b',
+        border: 'rgba(15, 23, 42, 0.15)',
+        grid: 'rgba(0, 0, 0, 0.08)',
+        cyan: '#0284c7',
+        blue: '#2563eb',
+        indigo: '#4f46e5',
+        purple: '#7c3aed',
+        pink: '#db2777',
+        green: '#059669',
+        amber: '#d97706',
+        red: '#dc2626',
+        pinholeBg: '#0f172a',
+        opticalRay: '#0369a1',
+        cameraFrustum: '#0284c7',
+        sensorPlane: '#0284c7',
+        epipolarPlane: 'rgba(124, 58, 237, 0.15)',
+        epipolarLine: '#be185d',
+        point3D: '#047857',
+        point2D: '#b45309',
+        threeBg: 0xf8fafc,
+        threeGrid: 0xcbd5e1,
+      };
+    }
+  }
+
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', nextTheme);
+
+    const btn = document.getElementById('themeToggleBtn');
+    if (btn) {
+      btn.innerHTML = nextTheme === 'light' ? '☀️ Light Theme' : '🌙 Dark Theme';
+    }
+
+    const tc = getThemeColors();
+    if (p3_scene) p3_scene.background = new THREE.Color(tc.threeBg);
+    if (p8_scene) p8_scene.background = new THREE.Color(tc.threeBg);
+
+    updatePanel1();
+    updatePanel2();
+    updatePanel3();
+    updatePanel4();
+    updatePanel5();
+    updatePanel6();
+    updatePanel7();
+    updatePanel8();
+    updatePanel9();
+  }
+
+  function switchTab(tabIndex) {
+    activeTab = tabIndex;
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach((btn, idx) => {
+      if (idx + 1 === tabIndex) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+
+    const panels = document.querySelectorAll('.topic-panel');
+    panels.forEach((panel, idx) => {
+      if (idx + 1 === tabIndex) {
+        panel.classList.add('active');
+      } else {
+        panel.classList.remove('active');
+      }
+    });
+
+    if (tabIndex === 3 && p3_renderer) {
+      setTimeout(() => onWindowResizeThree(p3_renderer, p3_camera, p3_container), 50);
+    }
+    if (tabIndex === 8 && p8_renderer) {
+      setTimeout(() => onWindowResizeThree(p8_renderer, p8_camera, p8_container), 50);
+    }
+    if (tabIndex === 9) {
+      setTimeout(() => updatePanel9(), 50);
+    }
+  }
+
+  function applyPreset(presetType) {
+    if (presetType === 'standard') {
+      if (document.getElementById('p1_f')) document.getElementById('p1_f').value = 800;
+      if (document.getElementById('p1_Z')) document.getElementById('p1_Z').value = 3.5;
+      if (document.getElementById('p1_Y')) document.getElementById('p1_Y').value = 0.3;
+      if (document.getElementById('p1_cy')) document.getElementById('p1_cy').value = 0;
+
+      if (document.getElementById('p2_fx')) document.getElementById('p2_fx').value = 800;
+      if (document.getElementById('p2_fy')) document.getElementById('p2_fy').value = 800;
+      if (document.getElementById('p2_cx')) document.getElementById('p2_cx').value = 320;
+      if (document.getElementById('p2_cy')) document.getElementById('p2_cy').value = 240;
+      if (document.getElementById('p2_s')) document.getElementById('p2_s').value = 0;
+
+      if (document.getElementById('p3_pitch')) document.getElementById('p3_pitch').value = 0;
+      if (document.getElementById('p3_yaw')) document.getElementById('p3_yaw').value = 0;
+      if (document.getElementById('p3_roll')) document.getElementById('p3_roll').value = 0;
+      if (document.getElementById('p3_tx')) document.getElementById('p3_tx').value = 0.0;
+      if (document.getElementById('p3_ty')) document.getElementById('p3_ty').value = 0.0;
+      if (document.getElementById('p3_tz')) document.getElementById('p3_tz').value = 2.5;
+
+      if (document.getElementById('p4_xw')) document.getElementById('p4_xw').value = 0.5;
+      if (document.getElementById('p4_yw')) document.getElementById('p4_yw').value = 0.3;
+      if (document.getElementById('p4_zw')) document.getElementById('p4_zw').value = 3.5;
+
+      if (document.getElementById('p5_B')) document.getElementById('p5_B').value = 0.12;
+      if (document.getElementById('p5_f')) document.getElementById('p5_f').value = 800;
+      if (document.getElementById('p5_Z')) document.getElementById('p5_Z').value = 3.5;
+      if (document.getElementById('p5_doffs')) document.getElementById('p5_doffs').value = 0;
+
+      if (document.getElementById('p6_px')) document.getElementById('p6_px').value = 220;
+      if (document.getElementById('p6_py')) document.getElementById('p6_py').value = 180;
+      if (document.getElementById('p6_tilt')) document.getElementById('p6_tilt').value = 0;
+      if (document.getElementById('p6_pitch')) document.getElementById('p6_pitch').value = 0;
+      if (document.getElementById('p6_roll')) document.getElementById('p6_roll').value = 0;
+      if (document.getElementById('p6_rectified_check')) document.getElementById('p6_rectified_check').checked = true;
+
+      if (document.getElementById('p7_k1')) document.getElementById('p7_k1').value = 0.0;
+      if (document.getElementById('p7_k2')) document.getElementById('p7_k2').value = 0.0;
+      if (document.getElementById('p7_p1')) document.getElementById('p7_p1').value = 0.0;
+      if (document.getElementById('p7_p2')) document.getElementById('p7_p2').value = 0.0;
+
+      if (document.getElementById('p8_b')) document.getElementById('p8_b').value = 0.12;
+      if (document.getElementById('p8_f')) document.getElementById('p8_f').value = 800;
+      if (document.getElementById('p8_noise')) document.getElementById('p8_noise').value = 0.0;
+
+      if (document.getElementById('p9_x')) document.getElementById('p9_x').value = 1.2;
+      if (document.getElementById('p9_y')) document.getElementById('p9_y').value = 0.8;
+      if (document.getElementById('p9_w')) document.getElementById('p9_w').value = 1.0;
+
+    } else if (presetType === 'wide_extreme') {
+      if (document.getElementById('p1_f')) document.getElementById('p1_f').value = 220;
+      if (document.getElementById('p1_Z')) document.getElementById('p1_Z').value = 1.2;
+      if (document.getElementById('p1_Y')) document.getElementById('p1_Y').value = -1.2;
+      if (document.getElementById('p1_cy')) document.getElementById('p1_cy').value = 45;
+
+      if (document.getElementById('p2_fx')) document.getElementById('p2_fx').value = 220;
+      if (document.getElementById('p2_fy')) document.getElementById('p2_fy').value = 220;
+      if (document.getElementById('p2_cx')) document.getElementById('p2_cx').value = 320;
+      if (document.getElementById('p2_cy')) document.getElementById('p2_cy').value = 240;
+      if (document.getElementById('p2_s')) document.getElementById('p2_s').value = 15;
+
+      if (document.getElementById('p3_pitch')) document.getElementById('p3_pitch').value = 20;
+      if (document.getElementById('p3_yaw')) document.getElementById('p3_yaw').value = -30;
+      if (document.getElementById('p3_roll')) document.getElementById('p3_roll').value = 15;
+      if (document.getElementById('p3_tx')) document.getElementById('p3_tx').value = -0.8;
+      if (document.getElementById('p3_ty')) document.getElementById('p3_ty').value = 0.5;
+      if (document.getElementById('p3_tz')) document.getElementById('p3_tz').value = 1.8;
+
+      if (document.getElementById('p4_xw')) document.getElementById('p4_xw').value = 1.8;
+      if (document.getElementById('p4_yw')) document.getElementById('p4_yw').value = -1.2;
+      if (document.getElementById('p4_zw')) document.getElementById('p4_zw').value = 1.2;
+
+      if (document.getElementById('p5_B')) document.getElementById('p5_B').value = 0.45;
+      if (document.getElementById('p5_f')) document.getElementById('p5_f').value = 350;
+      if (document.getElementById('p5_Z')) document.getElementById('p5_Z').value = 1.2;
+      if (document.getElementById('p5_doffs')) document.getElementById('p5_doffs').value = 10;
+
+      if (document.getElementById('p6_px')) document.getElementById('p6_px').value = 110;
+      if (document.getElementById('p6_py')) document.getElementById('p6_py').value = 260;
+      if (document.getElementById('p6_tilt')) document.getElementById('p6_tilt').value = 18;
+      if (document.getElementById('p6_pitch')) document.getElementById('p6_pitch').value = -10;
+      if (document.getElementById('p6_roll')) document.getElementById('p6_roll').value = 8;
+      if (document.getElementById('p6_rectified_check')) document.getElementById('p6_rectified_check').checked = false;
+
+      if (document.getElementById('p7_k1')) document.getElementById('p7_k1').value = -0.45;
+      if (document.getElementById('p7_k2')) document.getElementById('p7_k2').value = 0.12;
+      if (document.getElementById('p7_p1')) document.getElementById('p7_p1').value = 0.05;
+      if (document.getElementById('p7_p2')) document.getElementById('p7_p2').value = -0.02;
+
+      if (document.getElementById('p8_b')) document.getElementById('p8_b').value = 0.45;
+      if (document.getElementById('p8_f')) document.getElementById('p8_f').value = 350;
+      if (document.getElementById('p8_noise')) document.getElementById('p8_noise').value = 2.5;
+
+      if (document.getElementById('p9_x')) document.getElementById('p9_x').value = 3.5;
+      if (document.getElementById('p9_y')) document.getElementById('p9_y').value = 2.1;
+      if (document.getElementById('p9_w')) document.getElementById('p9_w').value = 0.4;
+    }
+
+    updatePanel1();
+    updatePanel2();
+    updatePanel3();
+    updatePanel4();
+    updatePanel5();
+    updatePanel6();
+    updatePanel7();
+    updatePanel8();
+    updatePanel9();
+  }
+
+  /* =========================================================================
+     PANEL 1: PINHOLE CAMERA MODEL
+     ========================================================================= */
+  let c1, ctx1;
+
+  function initPanel1() {
+    c1 = document.getElementById('canvasPinhole');
+    ctx1 = c1.getContext('2d');
+    updatePanel1();
+  }
+
+  function updatePanel1() {
+    if (!c1) return;
+    const vp = document.getElementById('viewportPinhole');
+    if (vp) {
+      c1.width = vp.clientWidth || 650;
+      c1.height = vp.clientHeight || 406;
+    }
+
+    const tc = getThemeColors();
+    const f = parseFloat(document.getElementById('p1_f').value);
+    const Z = parseFloat(document.getElementById('p1_Z').value);
+    const Y = parseFloat(document.getElementById('p1_Y').value);
+    const cy = parseFloat(document.getElementById('p1_cy').value);
+
+    document.getElementById('p1_f_val').innerText = f + ' px';
+    document.getElementById('p1_Z_val').innerText = Z.toFixed(1) + ' m';
+    document.getElementById('p1_Y_val').innerText = Y.toFixed(1) + ' m';
+    document.getElementById('p1_cy_val').innerText = cy + ' px';
+
+    const y_img = f * (Y / Z);
+    const v_pixel = y_img + cy;
+    const mag = f / Z;
+
+    document.getElementById('p1_y_img').innerText = y_img.toFixed(1) + ' px';
+    document.getElementById('p1_v_pixel').innerText = v_pixel.toFixed(1) + ' px';
+    document.getElementById('p1_mag').innerText = mag.toFixed(1) + ' px/m';
+
+    const w = c1.width;
+    const h = c1.height;
+    ctx1.clearRect(0, 0, w, h);
+
+    const pinholeX = w * 0.34;
+    const opticalAxisY = h * 0.42;
+
+    // Optical Axis
+    ctx1.strokeStyle = tc.amber;
+    ctx1.lineWidth = 1.5;
+    ctx1.setLineDash([6, 6]);
+    ctx1.beginPath();
+    ctx1.moveTo(20, opticalAxisY);
+    ctx1.lineTo(w - 20, opticalAxisY);
+    ctx1.stroke();
+    ctx1.setLineDash([]);
+
+    ctx1.fillStyle = tc.amber;
+    ctx1.font = '10px "JetBrains Mono"';
+    ctx1.fillText('Optical Axis (Y=0)', 25, opticalAxisY - 6);
+
+    // Pinhole Aperture
+    ctx1.fillStyle = tc.pinholeBg;
+    ctx1.fillRect(pinholeX - 4, 30, 8, opticalAxisY - 45);
+    ctx1.fillRect(pinholeX - 4, opticalAxisY + 45, 8, h - 30 - (opticalAxisY + 45));
+
+    ctx1.fillStyle = tc.textMain;
+    ctx1.font = '11px "Inter"';
+    ctx1.fillText('Pinhole (Optical Center)', pinholeX - 60, 25);
+
+    // Sensor Plane
+    const sensorX = pinholeX - (f * 0.35);
+    const cy_visual_shift = cy * 0.4;
+    const principalPointY = opticalAxisY + cy_visual_shift;
+
+    ctx1.strokeStyle = tc.sensorPlane;
+    ctx1.lineWidth = 3;
+    ctx1.beginPath();
+    ctx1.moveTo(sensorX, 40);
+    ctx1.lineTo(sensorX, h - 40);
+    ctx1.stroke();
+    ctx1.lineWidth = 1;
+
+    ctx1.fillStyle = tc.sensorPlane;
+    ctx1.font = '11px "JetBrains Mono"';
+    ctx1.fillText('Sensor Plane', Math.max(10, sensorX - 45), 32);
+    ctx1.fillText('f = ' + f + 'px', Math.max(10, (sensorX + pinholeX)/2 - 20), opticalAxisY - 10);
+
+    ctx1.strokeStyle = tc.sensorPlane;
+    ctx1.beginPath();
+    ctx1.moveTo(sensorX, opticalAxisY - 4);
+    ctx1.lineTo(pinholeX, opticalAxisY - 4);
+    ctx1.stroke();
+
+    ctx1.strokeStyle = tc.amber;
+    ctx1.fillStyle = tc.amber;
+    ctx1.lineWidth = 2;
+    ctx1.beginPath();
+    ctx1.arc(sensorX, principalPointY, 5, 0, Math.PI * 2);
+    ctx1.fill();
+
+    if (Math.abs(cy_visual_shift) > 2) {
+      ctx1.strokeStyle = tc.amber;
+      ctx1.lineWidth = 1.5;
+      ctx1.setLineDash([3, 3]);
+      ctx1.beginPath();
+      ctx1.moveTo(sensorX + 15, opticalAxisY);
+      ctx1.lineTo(sensorX + 15, principalPointY);
+      ctx1.stroke();
+      ctx1.setLineDash([]);
+
+      ctx1.fillStyle = tc.amber;
+      ctx1.fillText(`cy offset (${cy}px)`, sensorX + 22, (opticalAxisY + principalPointY) / 2 + 4);
+    }
+
+    const objX = pinholeX + Z * 40;
+    const objY = opticalAxisY - Y * 40;
+
+    ctx1.strokeStyle = tc.point3D;
+    ctx1.lineWidth = 4;
+    ctx1.beginPath();
+    ctx1.moveTo(objX, opticalAxisY);
+    ctx1.lineTo(objX, objY);
+    ctx1.stroke();
+
+    ctx1.fillStyle = tc.point3D;
+    ctx1.beginPath();
+    ctx1.arc(objX, objY, 7, 0, Math.PI * 2);
+    ctx1.fill();
+    ctx1.font = '11px "JetBrains Mono"';
+    ctx1.fillText('P(X, Y=' + Y + ', Z=' + Z + ')', Math.min(w - 180, objX + 12), objY);
+
+    const imgY_visual = principalPointY + (y_img * 0.35);
+
+    ctx1.strokeStyle = tc.pink;
+    ctx1.lineWidth = 4;
+    ctx1.beginPath();
+    ctx1.moveTo(sensorX, principalPointY);
+    ctx1.lineTo(sensorX, imgY_visual);
+    ctx1.stroke();
+
+    ctx1.fillStyle = tc.pink;
+    ctx1.beginPath();
+    ctx1.arc(sensorX, imgY_visual, 6, 0, Math.PI * 2);
+    ctx1.fill();
+    ctx1.fillText(`Final Pixel v = ${v_pixel.toFixed(0)}px`, Math.max(10, sensorX - 145), imgY_visual + 4);
+
+    ctx1.strokeStyle = tc.opticalRay;
+    ctx1.lineWidth = 2;
+    ctx1.setLineDash([4, 4]);
+    ctx1.beginPath();
+    ctx1.moveTo(objX, objY);
+    ctx1.lineTo(sensorX, imgY_visual);
+    ctx1.stroke();
+    ctx1.setLineDash([]);
+  }
+
+  /* =========================================================================
+     PANEL 2: INTRINSIC MATRIX K
+     ========================================================================= */
+  let c2, ctx2;
+
+  function initPanel2() {
+    c2 = document.getElementById('canvasIntrinsic');
+    ctx2 = c2.getContext('2d');
+    updatePanel2();
+  }
+
+  function updatePanel2() {
+    if (!c2) return;
+    const vp = document.getElementById('viewportIntrinsic');
+    if (vp) {
+      c2.width = vp.clientWidth || 650;
+      c2.height = vp.clientHeight || 406;
+    }
+
+    const tc = getThemeColors();
+    const fx = parseFloat(document.getElementById('p2_fx').value);
+    const fy = parseFloat(document.getElementById('p2_fy').value);
+    const s  = parseFloat(document.getElementById('p2_s').value);
+    const cx = parseFloat(document.getElementById('p2_cx').value);
+    const cy = parseFloat(document.getElementById('p2_cy').value);
+
+    document.getElementById('p2_fx_val').innerText = fx + ' px';
+    document.getElementById('p2_fy_val').innerText = fy + ' px';
+    document.getElementById('p2_s_val').innerText = s.toFixed(1);
+    document.getElementById('p2_cx_val').innerText = cx + ' px';
+    document.getElementById('p2_cy_val').innerText = cy + ' px';
+
+    const matHTML = `
+      <table class="matrix-table">
+        <tr>
+          <td rowspan="3" class="matrix-bracket"></td>
+          <td class="matrix-cell-active">${fx}</td>
+          <td class="matrix-cell-active" style="background: rgba(124, 58, 237, 0.25); color: ${tc.purple};">${s.toFixed(1)}</td>
+          <td class="matrix-cell-active" style="background: rgba(2, 132, 199, 0.2); color: ${tc.cyan};">${cx}</td>
+          <td>0</td>
+          <td rowspan="3" class="matrix-bracket"></td>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td class="matrix-cell-active">${fy}</td>
+          <td class="matrix-cell-active" style="background: rgba(2, 132, 199, 0.2); color: ${tc.cyan};">${cy}</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>0</td>
+          <td>1</td>
+          <td>0</td>
+        </tr>
+      </table>
+    `;
+    const matEl = document.getElementById('p2_matrix_display');
+    if (matEl) matEl.innerHTML = matHTML;
+
+    const w = c2.width;
+    const h = c2.height;
+    ctx2.clearRect(0, 0, w, h);
+
+    const sensorW = w * 0.82;
+    const sensorH = h * 0.78;
+    const startX = (w - sensorW) / 2;
+    const startY = (h - sensorH) / 2;
+
+    // Background Sensor Grid (640x480 Aspect Frame)
+    ctx2.fillStyle = tc.bgCanvas;
+    ctx2.fillRect(startX, startY, sensorW, sensorH);
+    ctx2.strokeStyle = tc.border;
+    ctx2.lineWidth = 2.5;
+    ctx2.strokeRect(startX, startY, sensorW, sensorH);
+
+    ctx2.strokeStyle = tc.grid;
+    ctx2.lineWidth = 1;
+    for (let x = startX; x <= startX + sensorW; x += 40) {
+      ctx2.beginPath(); ctx2.moveTo(x, startY); ctx2.lineTo(x, startY + sensorH); ctx2.stroke();
+    }
+    for (let y = startY; y <= startY + sensorH; y += 40) {
+      ctx2.beginPath(); ctx2.moveTo(startX, y); ctx2.lineTo(startX + sensorW, y); ctx2.stroke();
+    }
+
+    const px_cx = startX + (cx / 640) * sensorW;
+    const px_cy = startY + (cy / 480) * sensorH;
+
+    // Principal Point Crosshairs
+    ctx2.strokeStyle = tc.amber;
+    ctx2.lineWidth = 1.5;
+    ctx2.setLineDash([4, 4]);
+    ctx2.beginPath(); ctx2.moveTo(px_cx, startY); ctx2.lineTo(px_cx, startY + sensorH); ctx2.stroke();
+    ctx2.beginPath(); ctx2.moveTo(startX, px_cy); ctx2.lineTo(startX + sensorW, px_cy); ctx2.stroke();
+    ctx2.setLineDash([]);
+
+    ctx2.fillStyle = tc.amber;
+    ctx2.beginPath(); ctx2.arc(px_cx, px_cy, 6, 0, Math.PI*2); ctx2.fill();
+    ctx2.font = '11px "JetBrains Mono"';
+    ctx2.fillText(`Principal Point (cx=${cx}, cy=${cy})`, px_cx + 10, px_cy - 10);
+
+    // DYNAMIC SKEW PARALLELOGRAM GEOMETRY VISUALIZER
+    const rectSize = 80;
+    const shearFactor = (s / fy) * 2.2;
+    const skewAngleRad = Math.atan(s / fy);
+    const skewAngleDeg = (skewAngleRad * 180 / Math.PI);
+
+    // 1. Draw Orthogonal Unsheared Baseline Square
+    const squareX = px_cx - rectSize / 2;
+    const squareY = px_cy - rectSize / 2;
+    ctx2.strokeStyle = tc.textSubtle;
+    ctx2.lineWidth = 1.5;
+    ctx2.setLineDash([3, 3]);
+    ctx2.strokeRect(squareX, squareY, rectSize, rectSize);
+    ctx2.setLineDash([]);
+
+    // 2. Compute Sheared Parallelogram Vertices
+    const p1_x = squareX + (-rectSize / 2) * shearFactor;
+    const p1_y = squareY;
+    const p2_x = squareX + rectSize + (-rectSize / 2) * shearFactor;
+    const p2_y = squareY;
+    const p3_x = squareX + rectSize + (rectSize / 2) * shearFactor;
+    const p3_y = squareY + rectSize;
+    const p4_x = squareX + (rectSize / 2) * shearFactor;
+    const p4_y = squareY + rectSize;
+
+    // Glassmorphic Parallelogram Fill & Outline
+    ctx2.fillStyle = 'rgba(124, 58, 237, 0.18)';
+    ctx2.beginPath();
+    ctx2.moveTo(p1_x, p1_y);
+    ctx2.lineTo(p2_x, p2_y);
+    ctx2.lineTo(p3_x, p3_y);
+    ctx2.lineTo(p4_x, p4_y);
+    ctx2.closePath();
+    ctx2.fill();
+
+    ctx2.strokeStyle = tc.purple;
+    ctx2.lineWidth = 2.8;
+    ctx2.stroke();
+
+    // Internal Grid Lines inside Sheared Parallelogram
+    ctx2.strokeStyle = tc.purple;
+    ctx2.lineWidth = 1.2;
+    for (let i = 1; i <= 3; i++) {
+      const step = i / 4;
+      const hy_start_x = p1_x + (p4_x - p1_x) * step;
+      const hy_start_y = p1_y + (p4_y - p1_y) * step;
+      const hy_end_x = p2_x + (p3_x - p2_x) * step;
+      const hy_end_y = p2_y + (p3_y - p2_y) * step;
+      ctx2.beginPath(); ctx2.moveTo(hy_start_x, hy_start_y); ctx2.lineTo(hy_end_x, hy_end_y); ctx2.stroke();
+
+      const vx_start_x = p1_x + (p2_x - p1_x) * step;
+      const vx_start_y = p1_y;
+      const vx_end_x = p4_x + (p3_x - p4_x) * step;
+      const vx_end_y = p4_y;
+      ctx2.beginPath(); ctx2.moveTo(vx_start_x, vx_start_y); ctx2.lineTo(vx_end_x, vx_end_y); ctx2.stroke();
+    }
+
+    // 3. Draw Skew Angle Indicator Arc & Label
+    if (Math.abs(s) > 0.5) {
+      ctx2.strokeStyle = tc.cyan;
+      ctx2.lineWidth = 2.2;
+      ctx2.beginPath();
+      ctx2.arc(p4_x, p4_y, 26, -Math.PI / 2, -Math.PI / 2 + skewAngleRad, s < 0);
+      ctx2.stroke();
+
+      ctx2.fillStyle = tc.cyan;
+      ctx2.font = '11px "JetBrains Mono"';
+      ctx2.fillText(`θ_skew = ${skewAngleDeg.toFixed(1)}°`, p4_x + 32, p4_y - 12);
+    }
+
+    ctx2.fillStyle = tc.purple;
+    ctx2.font = '11px "JetBrains Mono"';
+    ctx2.fillText(`Pixel Grid Shearing (s = ${s.toFixed(1)})`, p1_x - 10, p1_y - 8);
+
+    // Projected Point (u, v) calculation with skew
+    const Xc = 0.5, Yc = 0.3, Zc = 2.0;
+    const u = (fx * Xc + s * Yc) / Zc + cx;
+    const v = (fy * Yc) / Zc + cy;
+
+    const px_u = startX + (u / 640) * sensorW;
+    const px_v = startY + (v / 480) * sensorH;
+
+    ctx2.fillStyle = tc.cyan;
+    ctx2.beginPath(); ctx2.arc(px_u, px_v, 7, 0, Math.PI*2); ctx2.fill();
+    ctx2.font = '11px "JetBrains Mono"';
+    ctx2.fillText(`Target Pixel (u=${u.toFixed(0)}, v=${v.toFixed(0)})`, px_u + 12, px_v + 4);
+  }
+
+  /* =========================================================================
+     PANEL 3: EXTRINSIC MATRIX [R|t] (THREE.JS 3D VIEWPORT)
+     ========================================================================= */
+  let p3_scene, p3_camera, p3_renderer, p3_controls, p3_frustumGroup;
+  let p3_container;
+
+  function createThickAxis(direction, colorHex, length = 1.4, radius = 0.035) {
+    const axisGroup = new THREE.Group();
+    const cylGeo = new THREE.CylinderGeometry(radius, radius, length, 16);
+    const mat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.3, metalness: 0.2 });
+    const cylMesh = new THREE.Mesh(cylGeo, mat);
+    
+    cylMesh.position.y = length / 2;
+    axisGroup.add(cylMesh);
+
+    const coneGeo = new THREE.ConeGeometry(radius * 2.2, 0.25, 16);
+    const coneMesh = new THREE.Mesh(coneGeo, mat);
+    coneMesh.position.y = length + 0.125;
+    axisGroup.add(coneMesh);
+
+    if (direction === 'x') axisGroup.rotation.z = -Math.PI / 2;
+    if (direction === 'z') axisGroup.rotation.x = Math.PI / 2;
+
+    return axisGroup;
+  }
+
+  function createThickFrustum(colorHex = 0x0284c7) {
+    const group = new THREE.Group();
+
+    const bodyGeo = new THREE.BoxGeometry(0.7, 0.45, 0.5);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.4,
+      metalness: 0.6
+    });
+    const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+    bodyMesh.position.z = -0.25;
+    group.add(bodyMesh);
+
+    const lensGeo = new THREE.CylinderGeometry(0.18, 0.18, 0.2, 24);
+    const lensMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1, metalness: 0.9 });
+    const lensMesh = new THREE.Mesh(lensGeo, lensMat);
+    lensMesh.rotation.x = Math.PI / 2;
+    lensMesh.position.z = 0.1;
+    group.add(lensMesh);
+
+    const apex = new THREE.Vector3(0, 0, 0.2);
+    const corners = [
+      new THREE.Vector3(-0.75, -0.5, 1.4),
+      new THREE.Vector3(0.75, -0.5, 1.4),
+      new THREE.Vector3(0.75, 0.5, 1.4),
+      new THREE.Vector3(-0.75, 0.5, 1.4)
+    ];
+
+    const rayMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.2, metalness: 0.8 });
+
+    corners.forEach(c => {
+      const dir = new THREE.Vector3().subVectors(c, apex);
+      const len = dir.length();
+      const cylGeo = new THREE.CylinderGeometry(0.028, 0.028, len, 12);
+      const cylMesh = new THREE.Mesh(cylGeo, rayMat);
+      
+      cylMesh.position.copy(apex).add(c).multiplyScalar(0.5);
+      cylMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      group.add(cylMesh);
+    });
+
+    for (let i = 0; i < 4; i++) {
+      const c1 = corners[i];
+      const c2 = corners[(i + 1) % 4];
+      const dir = new THREE.Vector3().subVectors(c2, c1);
+      const len = dir.length();
+      const cylGeo = new THREE.CylinderGeometry(0.028, 0.028, len, 12);
+      const cylMesh = new THREE.Mesh(cylGeo, rayMat);
+      
+      cylMesh.position.copy(c1).add(c2).multiplyScalar(0.5);
+      cylMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+      group.add(cylMesh);
+    }
+
+    const planeGeo = new THREE.PlaneGeometry(1.5, 1.0);
+    const planeMat = new THREE.MeshStandardMaterial({
+      color: colorHex,
+      transparent: true,
+      opacity: 0.22,
+      side: THREE.DoubleSide
+    });
+    const planeMesh = new THREE.Mesh(planeGeo, planeMat);
+    planeMesh.position.z = 1.4;
+    group.add(planeMesh);
+
+    return group;
+  }
+
+  function initPanel3() {
+    p3_container = document.getElementById('viewportExtrinsic');
+    if (!p3_container) return;
+
+    const w = p3_container.clientWidth || 650;
+    const h = p3_container.clientHeight || 406;
+
+    const tc = getThemeColors();
+    p3_scene = new THREE.Scene();
+    p3_scene.background = new THREE.Color(tc.threeBg);
+
+    p3_camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+    p3_camera.position.set(4.5, 3.2, 5.5);
+
+    p3_renderer = new THREE.WebGLRenderer({ antialias: true });
+    p3_renderer.setSize(w, h);
+    p3_renderer.setPixelRatio(window.devicePixelRatio);
+    p3_container.appendChild(p3_renderer.domElement);
+
+    p3_controls = new THREE.OrbitControls(p3_camera, p3_renderer.domElement);
+    p3_controls.enableDamping = true;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    p3_scene.add(ambientLight);
+
+    const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(5, 10, 7);
+    p3_scene.add(dirLight);
+
+    const gridHelper = new THREE.GridHelper(10, 20, 0x0284c7, tc.threeGrid);
+    p3_scene.add(gridHelper);
+
+    const worldAxesGroup = new THREE.Group();
+    worldAxesGroup.add(createThickAxis('x', 0xef4444, 1.4, 0.035));
+    worldAxesGroup.add(createThickAxis('y', 0x10b981, 1.4, 0.035));
+    worldAxesGroup.add(createThickAxis('z', 0x3b82f6, 1.4, 0.035));
+    p3_scene.add(worldAxesGroup);
+
+    const targetGeo = new THREE.OctahedronGeometry(0.35);
+    const targetMat = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.2, metalness: 0.8 });
+    const targetMesh = new THREE.Mesh(targetGeo, targetMat);
+    targetMesh.position.set(0, 0, 0);
+    p3_scene.add(targetMesh);
+
+    p3_frustumGroup = new THREE.Group();
+    p3_frustumGroup.add(createThickFrustum(0x0284c7));
+
+    const camAxesGroup = new THREE.Group();
+    camAxesGroup.add(createThickAxis('x', 0xf43f5e, 0.9, 0.028));
+    camAxesGroup.add(createThickAxis('y', 0x10b981, 0.9, 0.028));
+    camAxesGroup.add(createThickAxis('z', 0x8b5cf6, 0.9, 0.028));
+    p3_frustumGroup.add(camAxesGroup);
+
+    p3_scene.add(p3_frustumGroup);
+
+    function animateP3() {
+      requestAnimationFrame(animateP3);
+      if (p3_controls) p3_controls.update();
+      if (p3_renderer && p3_scene && p3_camera) p3_renderer.render(p3_scene, p3_camera);
+    }
+    animateP3();
+
+    updatePanel3();
+  }
+
+  function updatePanel3() {
+    if (!p3_frustumGroup) return;
+
+    const pitch = parseFloat(document.getElementById('p3_pitch').value) * Math.PI / 180;
+    const yaw   = parseFloat(document.getElementById('p3_yaw').value) * Math.PI / 180;
+    const roll  = parseFloat(document.getElementById('p3_roll').value) * Math.PI / 180;
+
+    const tx = parseFloat(document.getElementById('p3_tx').value);
+    const ty = parseFloat(document.getElementById('p3_ty').value);
+    const tz = parseFloat(document.getElementById('p3_tz').value);
+
+    document.getElementById('p3_pitch_val').innerText = (pitch * 180 / Math.PI).toFixed(0) + '°';
+    document.getElementById('p3_yaw_val').innerText   = (yaw * 180 / Math.PI).toFixed(0) + '°';
+    document.getElementById('p3_roll_val').innerText  = (roll * 180 / Math.PI).toFixed(0) + '°';
+
+    document.getElementById('p3_tx_val').innerText = tx.toFixed(1) + ' m';
+    document.getElementById('p3_ty_val').innerText = ty.toFixed(1) + ' m';
+    document.getElementById('p3_tz_val').innerText = tz.toFixed(1) + ' m';
+
+    p3_frustumGroup.position.set(tx, ty, tz);
+    p3_frustumGroup.rotation.set(pitch, yaw, roll, 'YXZ');
+
+    const cosY = Math.cos(yaw), sinY = Math.sin(yaw);
+    const cosX = Math.cos(pitch), sinX = Math.sin(pitch);
+    const cosZ = Math.cos(roll), sinZ = Math.sin(roll);
+
+    const R = [
+      [cosY * cosZ, -cosY * sinZ, sinY],
+      [sinX * sinY * cosZ + cosX * sinZ, -sinX * sinY * sinZ + cosX * cosZ, -sinX * cosY],
+      [-cosX * sinY * cosZ + sinX * sinZ, cosX * sinY * sinZ + sinX * cosZ, cosX * cosY]
+    ];
+
+    const cw_x = -(R[0][0] * tx + R[1][0] * ty + R[2][0] * tz);
+    const cw_y = -(R[0][1] * tx + R[1][1] * ty + R[2][1] * tz);
+    const cw_z = -(R[0][2] * tx + R[1][2] * ty + R[2][2] * tz);
+
+    const cwEl = document.getElementById('p3_cw_val');
+    if (cwEl) cwEl.innerText = `[${cw_x.toFixed(1)}, ${cw_y.toFixed(1)}, ${cw_z.toFixed(1)}]`;
+
+    const tc = getThemeColors();
+    const matHTML = `
+      <table class="matrix-table">
+        <tr>
+          <td rowspan="3" class="matrix-bracket"></td>
+          <td class="matrix-cell-active">${R[0][0].toFixed(2)}</td>
+          <td>${R[0][1].toFixed(2)}</td>
+          <td>${R[0][2].toFixed(2)}</td>
+          <td class="matrix-cell-active" style="background: rgba(219, 39, 119, 0.2); color: ${tc.pink};">${tx.toFixed(1)}</td>
+          <td rowspan="3" class="matrix-bracket"></td>
+        </tr>
+        <tr>
+          <td>${R[1][0].toFixed(2)}</td>
+          <td class="matrix-cell-active">${R[1][1].toFixed(2)}</td>
+          <td>${R[1][2].toFixed(2)}</td>
+          <td class="matrix-cell-active" style="background: rgba(219, 39, 119, 0.2); color: ${tc.pink};">${ty.toFixed(1)}</td>
+        </tr>
+        <tr>
+          <td>${R[2][0].toFixed(2)}</td>
+          <td>${R[2][1].toFixed(2)}</td>
+          <td class="matrix-cell-active">${R[2][2].toFixed(2)}</td>
+          <td class="matrix-cell-active" style="background: rgba(219, 39, 119, 0.2); color: ${tc.pink};">${tz.toFixed(1)}</td>
+        </tr>
+      </table>
+    `;
+    const matEl = document.getElementById('p3_matrix_display');
+    if (matEl) matEl.innerHTML = matHTML;
+  }
+
+  /* =========================================================================
+     PANEL 4: PROJECTION PIPELINE P = K[R|t] MULTI-STAGE GEOMETRIC CANVAS
+     ========================================================================= */
+  let c4, ctx4;
+
+  function initPanel4() {
+    c4 = document.getElementById('canvasPipeline');
+    ctx4 = c4.getContext('2d');
+    updatePanel4();
+  }
+
+  function updatePanel4() {
+    if (!c4) return;
+    const vp = document.getElementById('viewportPipeline');
+    if (vp) {
+      c4.width = vp.clientWidth || 650;
+      c4.height = vp.clientHeight || 406;
+    }
+
+    const tc = getThemeColors();
+    const Xw = parseFloat(document.getElementById('p4_xw').value);
+    const Yw = parseFloat(document.getElementById('p4_yw').value);
+    const Zw = parseFloat(document.getElementById('p4_zw').value);
+
+    document.getElementById('p4_xw_val').innerText = Xw.toFixed(1) + ' m';
+    document.getElementById('p4_yw_val').innerText = Yw.toFixed(1) + ' m';
+    document.getElementById('p4_zw_val').innerText = Zw.toFixed(1) + ' m';
+
+    const Xc = Xw, Yc = Yw, Zc = Zw;
+    const normX = Xc / Zc;
+    const normY = Yc / Zc;
+
+    const fx = 500, fy = 500, cx = 320, cy = 240;
+    const u = fx * normX + cx;
+    const v = fy * normY + cy;
+
+    if (document.getElementById('p4_pcam_val')) document.getElementById('p4_pcam_val').innerText = `[${Xc.toFixed(2)}, ${Yc.toFixed(2)}, ${Zc.toFixed(2)}]`;
+    if (document.getElementById('p4_norm_val')) document.getElementById('p4_norm_val').innerText = `[${normX.toFixed(3)}, ${normY.toFixed(3)}]`;
+    if (document.getElementById('p4_px_val')) document.getElementById('p4_px_val').innerText = `[${Math.round(u)}, ${Math.round(v)}]`;
+
+    const matHTML = `
+      <table class="matrix-table" style="font-size: 0.72rem;">
+        <tr>
+          <td rowspan="3" class="matrix-bracket"></td>
+          <td class="matrix-cell-active">${fx}</td>
+          <td>0</td>
+          <td>${cx}</td>
+          <td>0</td>
+          <td rowspan="3" class="matrix-bracket"></td>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td class="matrix-cell-active">${fy}</td>
+          <td>${cy}</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <td>0</td>
+          <td>0</td>
+          <td>1</td>
+          <td>0</td>
+        </tr>
+      </table>
+    `;
+    const matEl = document.getElementById('p4_matrix_display');
+    if (matEl) matEl.innerHTML = matHTML;
+
+    const w = c4.width;
+    const h = c4.height;
+    ctx4.clearRect(0, 0, w, h);
+
+    const colW = w / 4;
+
+    // --- STAGE 1: 3D WORLD SPACE (P_w) ---
+    const s1_cx = colW * 0.48;
+    const s1_cy = 135;
+    
+    ctx4.strokeStyle = tc.border;
+    ctx4.lineWidth = 1.5;
+    ctx4.beginPath(); ctx4.moveTo(s1_cx - 30, s1_cy); ctx4.lineTo(s1_cx + 40, s1_cy); ctx4.stroke();
+    ctx4.beginPath(); ctx4.moveTo(s1_cx, s1_cy + 30); ctx4.lineTo(s1_cx, s1_cy - 45); ctx4.stroke();
+    ctx4.beginPath(); ctx4.moveTo(s1_cx + 20, s1_cy + 20); ctx4.lineTo(s1_cx - 20, s1_cy - 20); ctx4.stroke();
+
+    ctx4.fillStyle = tc.textMuted;
+    ctx4.font = '10px "JetBrains Mono"';
+    ctx4.fillText('World (0,0,0)', s1_cx - 35, s1_cy + 42);
+
+    const pw_vis_x = s1_cx + Xw * 7;
+    const pw_vis_y = s1_cy - Yw * 7 - Zw * 3;
+
+    ctx4.strokeStyle = tc.green;
+    ctx4.lineWidth = 2;
+    ctx4.beginPath(); ctx4.moveTo(s1_cx, s1_cy); ctx4.lineTo(pw_vis_x, pw_vis_y); ctx4.stroke();
+
+    ctx4.fillStyle = tc.green;
+    ctx4.beginPath(); ctx4.arc(pw_vis_x, pw_vis_y, 6, 0, Math.PI*2); ctx4.fill();
+    ctx4.fillText(`P_w(${Xw.toFixed(1)}, ${Yw.toFixed(1)}, ${Zw.toFixed(1)})`, Math.max(10, pw_vis_x - 45), pw_vis_y - 10);
+
+    ctx4.fillStyle = tc.green;
+    ctx4.font = '11px "Inter"';
+    ctx4.textAlign = 'center';
+    ctx4.fillText('1. World Space P_w', colW * 0.5, 32);
+
+    // Arrow 1
+    const arrow1_x = colW * 0.95;
+    ctx4.strokeStyle = tc.blue;
+    ctx4.lineWidth = 2;
+    ctx4.beginPath(); ctx4.moveTo(arrow1_x, 110); ctx4.lineTo(arrow1_x + 25, 110); ctx4.stroke();
+    ctx4.fillStyle = tc.blue;
+    ctx4.beginPath(); ctx4.moveTo(arrow1_x + 30, 110); ctx4.lineTo(arrow1_x + 22, 105); ctx4.lineTo(arrow1_x + 22, 115); ctx4.fill();
+    ctx4.font = '9px "JetBrains Mono"';
+    ctx4.fillText('Extrinsic [R|t]', arrow1_x + 12, 98);
+
+    // --- STAGE 2: CAMERA FRAME (P_c) ---
+    const s2_cx = colW * 1.5;
+    const s2_cy = 135;
+
+    ctx4.fillStyle = tc.bgCanvas;
+    ctx4.strokeStyle = tc.blue;
+    ctx4.lineWidth = 1.5;
+    ctx4.fillRect(s2_cx - 35, s2_cy - 15, 30, 30);
+    ctx4.strokeRect(s2_cx - 35, s2_cy - 15, 30, 30);
+
+    const pc_vis_x = s2_cx + Xc * 8 + Zc * 4;
+    const pc_vis_y = s2_cy - Yc * 8;
+
+    ctx4.strokeStyle = tc.blue;
+    ctx4.beginPath(); ctx4.moveTo(s2_cx - 5, s2_cy); ctx4.lineTo(pc_vis_x, pc_vis_y); ctx4.stroke();
+
+    ctx4.fillStyle = tc.blue;
+    ctx4.beginPath(); ctx4.arc(pc_vis_x, pc_vis_y, 6, 0, Math.PI*2); ctx4.fill();
+    ctx4.fillText(`P_c(${Xc.toFixed(1)}, ${Yc.toFixed(1)}, ${Zc.toFixed(1)})`, pc_vis_x - 30, pc_vis_y - 10);
+
+    ctx4.fillStyle = tc.blue;
+    ctx4.font = '11px "Inter"';
+    ctx4.fillText('2. Camera Frame P_c', colW * 1.5, 32);
+
+    // Arrow 2
+    const arrow2_x = colW * 1.95;
+    ctx4.strokeStyle = tc.purple;
+    ctx4.lineWidth = 2;
+    ctx4.beginPath(); ctx4.moveTo(arrow2_x, 110); ctx4.lineTo(arrow2_x + 25, 110); ctx4.stroke();
+    ctx4.fillStyle = tc.purple;
+    ctx4.beginPath(); ctx4.moveTo(arrow2_x + 30, 110); ctx4.lineTo(arrow2_x + 22, 105); ctx4.lineTo(arrow2_x + 22, 115); ctx4.fill();
+    ctx4.font = '9px "JetBrains Mono"';
+    ctx4.fillText('Divide / Z_c', arrow2_x + 12, 98);
+
+    // --- STAGE 3: NORMALIZED PLANE (Z = 1) ---
+    const s3_cx = colW * 2.5;
+    const s3_cy = 135;
+
+    ctx4.strokeStyle = tc.purple;
+    ctx4.lineWidth = 2;
+    ctx4.strokeRect(s3_cx - 25, s3_cy - 40, 50, 80);
+
+    const norm_vis_x = s3_cx + normX * 35;
+    const norm_vis_y = s3_cy - normY * 35;
+
+    ctx4.fillStyle = tc.purple;
+    ctx4.beginPath(); ctx4.arc(norm_vis_x, norm_vis_y, 5, 0, Math.PI*2); ctx4.fill();
+    ctx4.font = '10px "JetBrains Mono"';
+    ctx4.fillText(`(${normX.toFixed(2)}, ${normY.toFixed(2)})`, norm_vis_x - 20, norm_vis_y + 16);
+
+    ctx4.fillStyle = tc.purple;
+    ctx4.font = '11px "Inter"';
+    ctx4.fillText('3. Normalized Plane (Z=1)', colW * 2.5, 32);
+
+    // Arrow 3
+    const arrow3_x = colW * 2.95;
+    ctx4.strokeStyle = tc.cyan;
+    ctx4.lineWidth = 2;
+    ctx4.beginPath(); ctx4.moveTo(arrow3_x, 110); ctx4.lineTo(arrow3_x + 25, 110); ctx4.stroke();
+    ctx4.fillStyle = tc.cyan;
+    ctx4.beginPath(); ctx4.moveTo(arrow3_x + 30, 110); ctx4.lineTo(arrow3_x + 22, 105); ctx4.lineTo(arrow3_x + 22, 115); ctx4.fill();
+    ctx4.font = '9px "JetBrains Mono"';
+    ctx4.fillText('Intrinsic K', arrow3_x + 12, 98);
+
+    // --- STAGE 4: SENSOR PIXEL (u, v) ---
+    const s4_cx = colW * 3.5;
+    const s4_cy = 135;
+
+    ctx4.fillStyle = tc.bgCanvas;
+    ctx4.strokeStyle = tc.cyan;
+    ctx4.lineWidth = 2;
+    ctx4.fillRect(s4_cx - 40, s4_cy - 45, 80, 90);
+    ctx4.strokeRect(s4_cx - 40, s4_cy - 45, 80, 90);
+
+    const px_vis_x = s4_cx - 40 + (u / 640) * 80;
+    const px_vis_y = s4_cy - 45 + (v / 480) * 90;
+
+    ctx4.fillStyle = tc.cyan;
+    ctx4.beginPath(); ctx4.arc(px_vis_x, px_vis_y, 6, 0, Math.PI*2); ctx4.fill();
+    ctx4.font = '10px "JetBrains Mono"';
+    ctx4.fillText(`Pixel(${Math.round(u)}, ${Math.round(v)})`, px_vis_x - 40, px_vis_y - 10);
+
+    ctx4.fillStyle = tc.cyan;
+    ctx4.font = '11px "Inter"';
+    ctx4.fillText('4. Screen Pixel (u, v)', colW * 3.5, 32);
+
+    // --- BOTTOM UNIFIED EQUATION BANNER ---
+    ctx4.fillStyle = tc.bgCanvas;
+    ctx4.strokeStyle = tc.border;
+    ctx4.fillRect(15, 235, w - 30, 145);
+    ctx4.strokeRect(15, 235, w - 30, 145);
+
+    ctx4.fillStyle = tc.cyan;
+    ctx4.font = '12px "JetBrains Mono"';
+    ctx4.textAlign = 'left';
+    ctx4.fillText('Complete Projection Pipeline Calculation:', 35, 262);
+
+    ctx4.fillStyle = tc.textMain;
+    ctx4.font = '11px "JetBrains Mono"';
+    ctx4.fillText(`Step 1: P_cam = [R|t] · P_w = [${Xc.toFixed(2)}, ${Yc.toFixed(2)}, ${Zc.toFixed(2)}]ᵀ`, 35, 292);
+    ctx4.fillText(`Step 2: Normalized Coords (x', y') = (X_c/Z_c, Y_c/Z_c) = (${normX.toFixed(3)}, ${normY.toFixed(3)})`, 35, 318);
+    ctx4.fillStyle = tc.green;
+    ctx4.fillText(`Step 3: Final Pixel (u, v) = (f_x · x' + c_x, f_y · y' + c_y) = (${Math.round(u)}px, ${Math.round(v)}px)`, 35, 348);
+  }
+
+  /* =========================================================================
+     PANEL 5: STEREO BASELINE & DISPARITY CANVAS WITH DOFFS & HYPERBOLA GRAPH
+     ========================================================================= */
+  let c5, ctx5;
+
+  function initPanel5() {
+    c5 = document.getElementById('canvasStereo');
+    ctx5 = c5.getContext('2d');
+    updatePanel5();
+  }
+
+  function updatePanel5() {
+    if (!c5) return;
+    const vp = document.getElementById('viewportStereo');
+    if (vp) {
+      c5.width = vp.clientWidth || 650;
+      c5.height = vp.clientHeight || 406;
+    }
+
+    const tc = getThemeColors();
+    const B = parseFloat(document.getElementById('p5_B').value);
+    const f = parseFloat(document.getElementById('p5_f').value);
+    const Z = parseFloat(document.getElementById('p5_Z').value);
+    const doffs = parseFloat(document.getElementById('p5_doffs').value);
+
+    document.getElementById('p5_B_val').innerText = B.toFixed(2) + ' m';
+    document.getElementById('p5_f_val').innerText = f.toFixed(0) + ' px';
+    document.getElementById('p5_Z_val').innerText = Z.toFixed(1) + ' m';
+    document.getElementById('p5_doffs_val').innerText = doffs.toFixed(1) + ' px';
+
+    const d = (f * B) / Z - doffs;
+    const calcZ = (f * B) / (d + doffs);
+    const dZ = (Z * Z) / (f * B);
+
+    if (document.getElementById('p5_disp_val')) document.getElementById('p5_disp_val').innerText = d.toFixed(1) + ' px';
+    if (document.getElementById('p5_calc_z')) document.getElementById('p5_calc_z').innerText = calcZ.toFixed(2) + ' m';
+    if (document.getElementById('p5_err_val')) document.getElementById('p5_err_val').innerText = '± ' + dZ.toFixed(3) + ' m';
+
+    const w = c5.width;
+    const h = c5.height;
+    ctx5.clearRect(0, 0, w, h);
+
+    const splitX = w * 0.48;
+    const subW = splitX;
+    const midX = subW / 2;
+
+    const b_px = Math.max(6, B * (subW * 0.35));
+
+    // Vertical Divider Line
+    ctx5.strokeStyle = tc.border;
+    ctx5.lineWidth = 1;
+    ctx5.beginPath(); ctx5.moveTo(splitX, 10); ctx5.lineTo(splitX, h - 10); ctx5.stroke();
+
+    // Horizontal Divider Line
+    ctx5.strokeStyle = tc.border;
+    ctx5.setLineDash([4, 4]);
+    ctx5.beginPath(); ctx5.moveTo(10, h * 0.5); ctx5.lineTo(splitX - 10, h * 0.5); ctx5.stroke();
+    ctx5.setLineDash([]);
+
+    // --- SUB-DIAGRAM 1 (TOP): SIMILAR TRIANGLES FOCAL OPTICS ---
+    const top_camL_x = midX - b_px / 2;
+    const top_camR_x = midX + b_px / 2;
+    const f_vis_offset = 16 + (f / 800) * 32;
+    const top_sensorY = h * 0.5 - 35;
+    const top_pinholeY = top_sensorY - f_vis_offset;
+
+    const top_targetX = midX;
+    const Z_vis_height = Math.min(50, Math.max(20, Z * 6));
+    const top_targetY = top_pinholeY - Z_vis_height;
+
+    ctx5.fillStyle = tc.cyan;
+    ctx5.font = '10px "Inter"';
+    ctx5.textAlign = 'left';
+    ctx5.fillText('1. Similar Triangles Focal Optics (f = ' + f.toFixed(0) + 'px)', 12, 18);
+
+    ctx5.fillStyle = tc.green;
+    ctx5.beginPath(); ctx5.arc(top_targetX, top_targetY, 4, 0, Math.PI*2); ctx5.fill();
+    ctx5.font = '9px "JetBrains Mono"';
+    ctx5.fillText(`P(Z=${Z.toFixed(1)}m)`, top_targetX - 24, top_targetY - 6);
+
+    ctx5.fillStyle = tc.textMuted;
+    ctx5.beginPath(); ctx5.arc(top_camL_x, top_pinholeY, 4, 0, Math.PI*2); ctx5.fill();
+    ctx5.beginPath(); ctx5.arc(top_camR_x, top_pinholeY, 4, 0, Math.PI*2); ctx5.fill();
+    ctx5.fillText('C_L', top_camL_x - 14, top_pinholeY - 6);
+    ctx5.fillText('C_R', top_camR_x + 6, top_pinholeY - 6);
+
+    ctx5.strokeStyle = tc.cyan;
+    ctx5.lineWidth = 2;
+    ctx5.beginPath(); ctx5.moveTo(top_camL_x - 26, top_sensorY); ctx5.lineTo(top_camL_x + 26, top_sensorY); ctx5.stroke();
+    ctx5.beginPath(); ctx5.moveTo(top_camR_x - 26, top_sensorY); ctx5.lineTo(top_camR_x + 26, top_sensorY); ctx5.stroke();
+
+    ctx5.strokeStyle = tc.cyan;
+    ctx5.lineWidth = 1;
+    ctx5.setLineDash([2, 2]);
+    ctx5.beginPath(); ctx5.moveTo(top_camL_x - 30, top_pinholeY); ctx5.lineTo(top_camL_x - 30, top_sensorY); ctx5.stroke();
+    ctx5.setLineDash([]);
+
+    ctx5.fillStyle = tc.cyan;
+    ctx5.font = '9px "JetBrains Mono"';
+    ctx5.fillText(`f=${f.toFixed(0)}px`, Math.max(8, top_camL_x - 60), (top_pinholeY + top_sensorY) / 2 + 3);
+
+    // Similar Triangles Overlay Badge
+    ctx5.fillStyle = tc.takeaway-bg || 'rgba(2, 132, 199, 0.12)';
+    ctx5.strokeStyle = tc.border;
+    ctx5.fillRect(subW - 165, 6, 155, 20);
+    ctx5.strokeRect(subW - 165, 6, 155, 20);
+
+    ctx5.fillStyle = tc.cyan;
+    ctx5.font = '9px "JetBrains Mono"';
+    ctx5.textAlign = 'center';
+    ctx5.fillText('Similar △: B/Z = d/f', subW - 88, 19);
+
+    const left_ray_dx = (top_camL_x - top_targetX) / Z_vis_height;
+    const left_proj_x = top_camL_x + left_ray_dx * f_vis_offset;
+
+    const right_ray_dx = (top_camR_x - top_targetX) / Z_vis_height;
+    const doffs_vis_shift = doffs * 0.4;
+    const right_proj_x = top_camR_x + right_ray_dx * f_vis_offset - doffs_vis_shift;
+
+    ctx5.strokeStyle = tc.blue;
+    ctx5.lineWidth = 1.5;
+    ctx5.beginPath(); ctx5.moveTo(top_targetX, top_targetY); ctx5.lineTo(left_proj_x, top_sensorY); ctx5.stroke();
+
+    ctx5.strokeStyle = tc.purple;
+    ctx5.beginPath(); ctx5.moveTo(top_targetX, top_targetY); ctx5.lineTo(right_proj_x, top_sensorY); ctx5.stroke();
+
+    ctx5.fillStyle = tc.blue;
+    ctx5.beginPath(); ctx5.arc(left_proj_x, top_sensorY, 4, 0, Math.PI*2); ctx5.fill();
+    ctx5.fillStyle = tc.purple;
+    ctx5.beginPath(); ctx5.arc(right_proj_x, top_sensorY, 4, 0, Math.PI*2); ctx5.fill();
+
+    const disp_vis_width = Math.max(10, (left_proj_x - top_camL_x) - (right_proj_x - top_camR_x));
+    const disp_bracket_start = top_camR_x + (left_proj_x - top_camL_x) - disp_vis_width;
+    ctx5.strokeStyle = tc.pink;
+    ctx5.lineWidth = 1.5;
+    ctx5.beginPath(); ctx5.moveTo(disp_bracket_start, top_sensorY + 8); ctx5.lineTo(disp_bracket_start + disp_vis_width, top_sensorY + 8); ctx5.stroke();
+    ctx5.fillStyle = tc.pink;
+    ctx5.font = '9px "JetBrains Mono"';
+    ctx5.fillText(`d=${d.toFixed(0)}px`, disp_bracket_start + disp_vis_width / 2, top_sensorY + 20);
+
+    // --- SUB-DIAGRAM 2 (BOTTOM): STEREO RIG & BASELINE ---
+    const bot_camL_x = midX - b_px / 2;
+    const bot_camR_x = midX + b_px / 2;
+    const bot_camY = h - 45;
+
+    ctx5.fillStyle = tc.amber;
+    ctx5.font = '10px "Inter"';
+    ctx5.textAlign = 'left';
+    ctx5.fillText('2. Stereo Rig & Baseline (B = ' + B.toFixed(2) + 'm, Z = ' + Z.toFixed(1) + 'm)', 12, h * 0.5 + 18);
+
+    ctx5.fillStyle = tc.blue;
+    ctx5.fillRect(bot_camL_x - 12, bot_camY, 24, 16);
+    ctx5.fillStyle = tc.purple;
+    ctx5.fillRect(bot_camR_x - 12, bot_camY, 24, 16);
+
+    ctx5.fillStyle = tc.textMuted;
+    ctx5.font = '9px "JetBrains Mono"';
+    ctx5.textAlign = 'center';
+    ctx5.fillText('Cam L', bot_camL_x, bot_camY + 26);
+    ctx5.fillText('Cam R', bot_camR_x, bot_camY + 26);
+
+    ctx5.strokeStyle = tc.amber;
+    ctx5.lineWidth = 2;
+    ctx5.beginPath(); ctx5.moveTo(bot_camL_x, bot_camY); ctx5.lineTo(bot_camR_x, bot_camY); ctx5.stroke();
+    ctx5.fillStyle = tc.amber;
+    ctx5.fillText(`Baseline B = ${B.toFixed(2)}m`, midX, bot_camY - 6);
+
+    const ptX = midX;
+    const ptY = bot_camY - Math.min(110, Math.max(35, Z * 15));
+
+    ctx5.fillStyle = tc.green;
+    ctx5.beginPath(); ctx5.arc(ptX, ptY, 5, 0, Math.PI*2); ctx5.fill();
+    ctx5.fillText(`Point P (Z=${Z.toFixed(1)}m)`, ptX, ptY - 8);
+
+    ctx5.strokeStyle = tc.blue;
+    ctx5.lineWidth = 1.5;
+    ctx5.beginPath(); ctx5.moveTo(bot_camL_x, bot_camY); ctx5.lineTo(ptX, ptY); ctx5.stroke();
+
+    ctx5.strokeStyle = tc.purple;
+    ctx5.beginPath(); ctx5.moveTo(bot_camR_x, bot_camY); ctx5.lineTo(ptX, ptY); ctx5.stroke();
+
+    if (Math.abs(doffs) > 0.5) {
+      const doffs_shift = doffs * 0.7;
+      const shiftX = bot_camR_x + doffs_shift;
+
+      ctx5.strokeStyle = tc.amber;
+      ctx5.lineWidth = 1.5;
+      ctx5.setLineDash([3, 3]);
+      ctx5.beginPath(); ctx5.moveTo(shiftX, bot_camY - 25); ctx5.lineTo(shiftX, bot_camY + 25); ctx5.stroke();
+      ctx5.setLineDash([]);
+
+      ctx5.fillStyle = tc.amber;
+      ctx5.font = '9px "JetBrains Mono"';
+      ctx5.fillText(`doffs=${doffs.toFixed(1)}px`, shiftX + 25, bot_camY - 14);
+    }
+
+    // --- RIGHT PANEL: DEPTH Z VS DISPARITY d CURVE GRAPH ---
+    ctx5.fillStyle = tc.bgCanvas;
+    ctx5.fillRect(splitX + 15, 30, w - splitX - 30, h - 60);
+    ctx5.strokeStyle = tc.border;
+    ctx5.strokeRect(splitX + 15, 30, w - splitX - 30, h - 60);
+
+    ctx5.fillStyle = tc.cyan;
+    ctx5.font = '11px "Inter"';
+    ctx5.textAlign = 'left';
+    ctx5.fillText('Depth Z vs Disparity d Curve', splitX + 25, 48);
+
+    ctx5.strokeStyle = tc.purple;
+    ctx5.lineWidth = 2.5;
+    ctx5.beginPath();
+    let first = true;
+    for (let plotD = 5; plotD <= 120; plotD += 2) {
+      const plotZ = (f * B) / (plotD + doffs);
+      const px = splitX + 25 + (plotD / 120) * (w - splitX - 50);
+      const py = (h - 40) - (plotZ / 8.0) * (h - 80);
+
+      if (px <= w - 25 && py >= 30 && plotZ > 0) {
+        if (first) { ctx5.moveTo(px, py); first = false; }
+        else ctx5.lineTo(px, py);
+      }
+    }
+    ctx5.stroke();
+
+    const curPx = splitX + 25 + (d / 120) * (w - splitX - 50);
+    const curPy = (h - 40) - (Z / 8.0) * (h - 80);
+
+    ctx5.fillStyle = tc.cyan;
+    ctx5.beginPath(); ctx5.arc(curPx, curPy, 6, 0, Math.PI*2); ctx5.fill();
+  }
+
+  /* =========================================================================
+     PANEL 6: EPIPOLAR GEOMETRY, ESSENTIAL (E) & FUNDAMENTAL (F) MATRICES
+     ========================================================================= */
+  let c6, ctx6;
+
+  function initPanel6() {
+    c6 = document.getElementById('canvasEpipolar');
+    if (c6) {
+      ctx6 = c6.getContext('2d');
+      updatePanel6();
+      if (!p6_anim_id) animatePanel6();
+    }
+  }
+
+  function setPanel6Mode(mode) {
+    p6_current_mode = mode;
+    ['3d', '2d', 'rect'].forEach(m => {
+      const btn = document.getElementById('p6_mode_' + m);
+      if (btn) {
+        if (m === mode) btn.classList.add('active');
+        else btn.classList.remove('active');
+      }
+    });
+
+    const titleEl = document.getElementById('p6_viewport_title');
+    if (titleEl) {
+      if (mode === '3d') titleEl.innerText = '3D Optical Space: Baseline C_L-C_R, Epipolar Plane & Epipoles e_L, e_R';
+      else if (mode === '2d') titleEl.innerText = '2D Image Correspondences: Scanline Search along Epipolar Line l_R';
+      else if (mode === 'rect') titleEl.innerText = 'Comparison: Unrectified (Finite Epipole) vs Rectified (Epipole at ∞)';
+    }
+    updatePanel6();
+  }
+
+  function animatePanel6() {
+    p6_scan_phase = (p6_scan_phase + 0.02) % (Math.PI * 2);
+    if (p6_current_mode === '2d') updatePanel6();
+    p6_anim_id = requestAnimationFrame(animatePanel6);
+  }
+
+  function updatePanel6() {
+    if (!c6) return;
+    const vp = document.getElementById('viewportEpipolar');
+    if (vp) {
+      c6.width = vp.clientWidth || 650;
+      c6.height = vp.clientHeight || 406;
+    }
+
+    const tc = getThemeColors();
+    const px = parseFloat(document.getElementById('p6_px').value);
+    const py = parseFloat(document.getElementById('p6_py').value);
+    const isRectified = document.getElementById('p6_rectified_check') ? document.getElementById('p6_rectified_check').checked : false;
+    
+    let tilt = isRectified ? 0 : parseFloat(document.getElementById('p6_tilt').value);
+    let pitch = isRectified ? 0 : parseFloat(document.getElementById('p6_pitch') ? document.getElementById('p6_pitch').value : 0);
+    let roll = isRectified ? 0 : parseFloat(document.getElementById('p6_roll') ? document.getElementById('p6_roll').value : 0);
+
+    document.getElementById('p6_px_val').innerText = px + ' px';
+    document.getElementById('p6_py_val').innerText = py + ' px';
+    document.getElementById('p6_tilt_val').innerText = tilt.toFixed(1) + '°';
+    if (document.getElementById('p6_pitch_val')) document.getElementById('p6_pitch_val').innerText = pitch.toFixed(1) + '°';
+    if (document.getElementById('p6_roll_val')) document.getElementById('p6_roll_val').innerText = roll.toFixed(1) + '°';
+
+    const ty = tilt * Math.PI / 180;
+    const tx = pitch * Math.PI / 180;
+    const tz = roll * Math.PI / 180;
+
+    const cosY = Math.cos(ty), sinY = Math.sin(ty);
+    const cosX = Math.cos(tx), sinX = Math.sin(tx);
+    const cosZ = Math.cos(tz), sinZ = Math.sin(tz);
+
+    const Rxy = [
+      [cosY, 0, sinY],
+      [sinX * sinY, cosX, -sinX * cosY],
+      [-cosX * sinY, sinX, cosX * cosY]
+    ];
+    const R = [
+      [cosZ * Rxy[0][0] - sinZ * Rxy[1][0], cosZ * Rxy[0][1] - sinZ * Rxy[1][1], cosZ * Rxy[0][2] - sinZ * Rxy[1][2]],
+      [sinZ * Rxy[0][0] + cosZ * Rxy[1][0], sinZ * Rxy[0][1] + cosZ * Rxy[1][1], sinZ * Rxy[0][2] + cosZ * Rxy[1][2]],
+      [Rxy[2][0], Rxy[2][1], Rxy[2][2]]
+    ];
+
+    const B = 0.5;
+    const tRx = R[0][0] * (-B);
+    const tRy = R[1][0] * (-B);
+    const tRz = R[2][0] * (-B);
+
+    const t_skew = [
+      [0, -tRz, tRy],
+      [tRz, 0, -tRx],
+      [-tRy, tRx, 0]
+    ];
+
+    const E = [
+      [
+        t_skew[0][0]*R[0][0] + t_skew[0][1]*R[1][0] + t_skew[0][2]*R[2][0],
+        t_skew[0][0]*R[0][1] + t_skew[0][1]*R[1][1] + t_skew[0][2]*R[2][1],
+        t_skew[0][0]*R[0][2] + t_skew[0][1]*R[1][2] + t_skew[0][2]*R[2][2]
+      ],
+      [
+        t_skew[1][0]*R[0][0] + t_skew[1][1]*R[1][0] + t_skew[1][2]*R[2][0],
+        t_skew[1][0]*R[0][1] + t_skew[1][1]*R[1][1] + t_skew[1][2]*R[2][1],
+        t_skew[1][0]*R[0][2] + t_skew[1][1]*R[1][2] + t_skew[1][2]*R[2][2]
+      ],
+      [
+        t_skew[2][0]*R[0][0] + t_skew[2][1]*R[1][0] + t_skew[2][2]*R[2][0],
+        t_skew[2][0]*R[0][1] + t_skew[2][1]*R[1][1] + t_skew[2][2]*R[2][1],
+        t_skew[2][0]*R[0][2] + t_skew[2][1]*R[1][2] + t_skew[2][2]*R[2][2]
+      ]
+    ];
+
+    const matE_HTML = `
+      <table class="matrix-table" style="font-size: 0.72rem;">
+        <tr>
+          <td rowspan="3" class="matrix-bracket" style="border-color: ${tc.cyan};"></td>
+          <td>${E[0][0].toFixed(2)}</td>
+          <td>${E[0][1].toFixed(2)}</td>
+          <td>${E[0][2].toFixed(2)}</td>
+          <td rowspan="3" class="matrix-bracket" style="border-color: ${tc.cyan};"></td>
+        </tr>
+        <tr>
+          <td class="matrix-cell-active">${E[1][0].toFixed(2)}</td>
+          <td class="matrix-cell-active">${E[1][1].toFixed(2)}</td>
+          <td class="matrix-cell-active">${E[1][2].toFixed(2)}</td>
+        </tr>
+        <tr>
+          <td>${E[2][0].toFixed(2)}</td>
+          <td>${E[2][1].toFixed(2)}</td>
+          <td>${E[2][2].toFixed(2)}</td>
+        </tr>
+      </table>
+    `;
+    const matE_El = document.getElementById('p6_matrix_E_display');
+    if (matE_El) matE_El.innerHTML = matE_HTML;
+
+    const focal = 500.0;
+    const F = [
+      [E[0][0]/(focal*focal), E[0][1]/(focal*focal), E[0][2]/focal],
+      [E[1][0]/(focal*focal), E[1][1]/(focal*focal), E[1][2]/focal],
+      [E[2][0]/focal,         E[2][1]/focal,         E[2][2]]
+    ];
+
+    const matF_HTML = `
+      <table class="matrix-table" style="font-size: 0.72rem;">
+        <tr>
+          <td rowspan="3" class="matrix-bracket" style="border-color: ${tc.purple};"></td>
+          <td>${F[0][0].toFixed(4)}</td>
+          <td>${F[0][1].toFixed(4)}</td>
+          <td>${F[0][2].toFixed(4)}</td>
+          <td rowspan="3" class="matrix-bracket" style="border-color: ${tc.purple};"></td>
+        </tr>
+        <tr>
+          <td class="matrix-cell-active" style="background: rgba(124, 58, 237, 0.25); color: ${tc.purple};">${F[1][0].toFixed(4)}</td>
+          <td class="matrix-cell-active" style="background: rgba(124, 58, 237, 0.25); color: ${tc.purple};">${F[1][1].toFixed(4)}</td>
+          <td class="matrix-cell-active" style="background: rgba(124, 58, 237, 0.25); color: ${tc.purple};">${F[1][2].toFixed(4)}</td>
+        </tr>
+        <tr>
+          <td>${F[2][0].toFixed(4)}</td>
+          <td>${F[2][1].toFixed(4)}</td>
+          <td>${F[2][2].toFixed(4)}</td>
+        </tr>
+      </table>
+    `;
+    const matF_El = document.getElementById('p6_matrix_F_display');
+    if (matF_El) matF_El.innerHTML = matF_HTML;
+
+    let epL_u = "-∞", epL_v = "180";
+    let epR_u = "+∞", epR_v = "180";
+
+    if (Math.abs(tRz) > 1e-4) {
+      const u_r = Math.round(160 + focal * (tRx / tRz));
+      const v_r = Math.round(200 + focal * (tRy / tRz));
+      epR_u = u_r.toString();
+      epR_v = v_r.toString();
+    }
+
+    const tLx = R[0][0]*B;
+    const tLy = R[0][1]*B;
+    const tLz = R[0][2]*B;
+    if (Math.abs(tLz) > 1e-4) {
+      const u_l = Math.round(160 + focal * (tLx / tLz));
+      const v_l = Math.round(200 + focal * (tLy / tLz));
+      epL_u = u_l.toString();
+      epL_v = v_l.toString();
+    }
+
+    const epL_El = document.getElementById('p6_epipole_L');
+    if (epL_El) epL_El.innerText = `[${epL_u}, ${epL_v}]`;
+    const epR_El = document.getElementById('p6_epipole_R');
+    if (epR_El) epR_El.innerText = `[${epR_u}, ${epR_v}]`;
+
+    const pL_x = px - 160.0;
+    const pL_y = py - 200.0;
+    const lR_a = F[0][0] * pL_x + F[0][1] * pL_y + F[0][2];
+    const lR_b = F[1][0] * pL_x + F[1][1] * pL_y + F[1][2];
+    const lR_c = F[2][0] * pL_x + F[2][1] * pL_y + F[2][2];
+
+    const lineEqStr = `${lR_a.toFixed(3)}u + ${lR_b.toFixed(3)}v + ${lR_c.toFixed(1)} = 0`;
+    if (document.getElementById('p6_line_eq')) document.getElementById('p6_line_eq').innerText = lineEqStr;
+
+    const w = c6.width;
+    const h = c6.height;
+    ctx6.clearRect(0, 0, w, h);
+
+    if (p6_current_mode === '3d') {
+      renderPanel6_3DMode(w, h, px, py, tilt, pitch, roll, tRx, tRy, tRz, tc);
+    } else if (p6_current_mode === '2d') {
+      renderPanel6_2DMode(w, h, px, py, tilt, pitch, roll, lR_a, lR_b, lR_c, tc);
+    } else if (p6_current_mode === 'rect') {
+      renderPanel6_RectMode(w, h, px, py, tilt, pitch, roll, tc);
+    }
+  }
+
+  function renderPanel6_3DMode(w, h, px, py, tilt, pitch, roll, tRx, tRy, tRz, tc) {
+    const cx = w * 0.5;
+    const cy = h * 0.55;
+
+    const clX = cx - 180, clY = cy + 40;
+    const crX = cx + 180 + tilt * 2, crY = cy + 40 + pitch * 3;
+
+    const pX = cx + (px - 160) * 1.1;
+    const pY = cy - 130 - (py - 180) * 0.7;
+
+    ctx6.strokeStyle = tc.indigo;
+    ctx6.lineWidth = 2.5;
+    ctx6.beginPath(); ctx6.moveTo(clX, clY); ctx6.lineTo(crX, crY); ctx6.stroke();
+    ctx6.fillStyle = tc.indigo;
+    ctx6.font = '11px "JetBrains Mono"';
+    ctx6.fillText('Baseline (C_L — C_R)', cx - 45, clY + 22);
+
+    ctx6.fillStyle = tc.epipolarPlane;
+    ctx6.strokeStyle = tc.purple;
+    ctx6.lineWidth = 1.5;
+    ctx6.beginPath();
+    ctx6.moveTo(clX, clY);
+    ctx6.lineTo(pX, pY);
+    ctx6.lineTo(crX, crY);
+    ctx6.closePath();
+    ctx6.fill();
+    ctx6.stroke();
+
+    ctx6.fillStyle = tc.cyan;
+    ctx6.font = '11px "Inter"';
+    ctx6.fillText('Dynamic Epipolar Plane π', pX - 45, pY - 25);
+
+    ctx6.strokeStyle = tc.opticalRay;
+    ctx6.lineWidth = 2;
+    ctx6.beginPath(); ctx6.moveTo(clX, clY); ctx6.lineTo(pX, pY); ctx6.stroke();
+
+    ctx6.strokeStyle = tc.purple;
+    ctx6.lineWidth = 2;
+    ctx6.beginPath(); ctx6.moveTo(crX, crY); ctx6.lineTo(pX, pY); ctx6.stroke();
+
+    ctx6.fillStyle = tc.green;
+    ctx6.beginPath(); ctx6.arc(pX, pY, 7, 0, Math.PI*2); ctx6.fill();
+    ctx6.fillText(`3D World Point P(px=${px}, py=${py})`, pX - 85, pY - 10);
+
+    // Left View Plane Box
+    const imgLW = 90, imgLH = 65;
+    const imgLX = clX + 30, imgLY = clY - 55;
+    ctx6.fillStyle = tc.bgCanvas;
+    ctx6.strokeStyle = tc.blue;
+    ctx6.lineWidth = 1.5;
+    ctx6.fillRect(imgLX, imgLY, imgLW, imgLH);
+    ctx6.strokeRect(imgLX, imgLY, imgLW, imgLH);
+    ctx6.fillStyle = tc.blue;
+    ctx6.font = '10px "JetBrains Mono"';
+    ctx6.fillText('Left View Plane', imgLX + 4, imgLY - 6);
+
+    // Right View Plane Box
+    const imgRW = 90, imgRH = 65;
+    const imgRX = crX - 120 + tilt * 1.2, imgRY = crY - 55 + pitch * 1.5;
+    ctx6.fillStyle = tc.bgCanvas;
+    ctx6.strokeStyle = tc.purple;
+    ctx6.lineWidth = 1.5;
+    ctx6.fillRect(imgRX, imgRY, imgRW, imgRH);
+    ctx6.strokeRect(imgRX, imgRY, imgRW, imgRH);
+    ctx6.fillStyle = tc.purple;
+    ctx6.fillText(`Right View (yaw=${tilt}°, pitch=${pitch}°)`, imgRX - 15, imgRY - 6);
+
+    // Ray Intersections p_L and p_R
+    const pLx = imgLX + (px / 320) * imgLW;
+    const pLy = imgLY + (py / 400) * imgLH;
+    ctx6.fillStyle = tc.green;
+    ctx6.beginPath(); ctx6.arc(pLx, pLy, 5, 0, Math.PI*2); ctx6.fill();
+    ctx6.fillText('p_L', pLx + 6, pLy - 4);
+
+    const pRx = imgRX + (px / 320) * imgRW - tilt * 0.6;
+    const pRy = imgRY + (py / 400) * imgRH + pitch * 0.8 + roll * 0.5;
+    ctx6.fillStyle = tc.cyan;
+    ctx6.beginPath(); ctx6.arc(pRx, pRy, 5, 0, Math.PI*2); ctx6.fill();
+    ctx6.fillText('p_R', pRx + 6, pRy - 4);
+
+    // Epipoles e_L and e_R
+    const eLx = imgLX - 15, eLy = imgLY + 32;
+    ctx6.fillStyle = tc.red;
+    ctx6.beginPath(); ctx6.arc(eLx, eLy, 5, 0, Math.PI*2); ctx6.fill();
+    ctx6.fillText('e_L', eLx - 18, eLy + 12);
+
+    const eRx = imgRX + imgRW + 15 + tilt * 0.5, eRy = imgRY + 32 + pitch * 1.2;
+    ctx6.fillStyle = tc.red;
+    ctx6.beginPath(); ctx6.arc(eRx, eRy, 5, 0, Math.PI*2); ctx6.fill();
+    ctx6.fillText('e_R', eRx + 8, eRy + 12);
+
+    // Epipolar Lines l_L and l_R
+    ctx6.strokeStyle = tc.pink;
+    ctx6.lineWidth = 2;
+    ctx6.beginPath(); ctx6.moveTo(eLx, eLy); ctx6.lineTo(pLx, pLy); ctx6.stroke();
+    ctx6.fillText('l_L', pLx - 14, pLy + 14);
+
+    ctx6.beginPath(); ctx6.moveTo(pRx, pRy); ctx6.lineTo(eRx, eRy); ctx6.stroke();
+    ctx6.fillText('l_R = F · p_L', pRx - 10, pRy + 16);
+
+    ctx6.fillStyle = tc.textMain;
+    ctx6.beginPath(); ctx6.arc(clX, clY, 6, 0, Math.PI*2); ctx6.fill();
+    ctx6.fillText('C_L (Left Center)', clX - 45, clY + 34);
+
+    ctx6.beginPath(); ctx6.arc(crX, crY, 6, 0, Math.PI*2); ctx6.fill();
+    ctx6.fillText('C_R (Right Center)', crX - 45, crY + 34);
+  }
+
+  function renderPanel6_2DMode(w, h, px, py, tilt, pitch, roll, lR_a, lR_b, lR_c, tc) {
+    const frameW = w * 0.44;
+    const frameH = h * 0.72;
+    const leftX = w * 0.03;
+    const rightX = w * 0.53;
+    const frameY = 32;
+
+    ctx6.fillStyle = tc.bgCanvas;
+    ctx6.fillRect(leftX, frameY, frameW, frameH);
+    ctx6.strokeStyle = tc.blue;
+    ctx6.lineWidth = 2;
+    ctx6.strokeRect(leftX, frameY, frameW, frameH);
+
+    ctx6.fillStyle = tc.blue;
+    ctx6.font = '11px "JetBrains Mono"';
+    ctx6.fillText('Left Image View (Feature p_L)', leftX + 8, frameY - 8);
+
+    const scaledPx = (px / 320) * frameW;
+    const scaledPy = (py / 400) * frameH;
+    ctx6.fillStyle = tc.green;
+    ctx6.beginPath(); ctx6.arc(leftX + scaledPx, frameY + scaledPy, 6, 0, Math.PI*2); ctx6.fill();
+    ctx6.fillText(`p_L(${px}, ${py})`, leftX + scaledPx + 8, frameY + scaledPy - 4);
+
+    ctx6.strokeStyle = tc.green;
+    ctx6.setLineDash([3, 3]);
+    ctx6.beginPath(); ctx6.moveTo(leftX, frameY + scaledPy); ctx6.lineTo(leftX + frameW, frameY + scaledPy); ctx6.stroke();
+    ctx6.beginPath(); ctx6.moveTo(leftX + scaledPx, frameY); ctx6.lineTo(leftX + scaledPx, frameY + frameH); ctx6.stroke();
+    ctx6.setLineDash([]);
+
+    ctx6.fillStyle = tc.bgCanvas;
+    ctx6.fillRect(rightX, frameY, frameW, frameH);
+    ctx6.strokeStyle = tc.purple;
+    ctx6.lineWidth = 2;
+    ctx6.strokeRect(rightX, frameY, frameW, frameH);
+
+    ctx6.fillStyle = tc.purple;
+    ctx6.fillText(`Right Image View (l_R: a=${lR_a.toFixed(2)}, b=${lR_b.toFixed(2)})`, rightX + 8, frameY - 8);
+
+    let lineY1 = frameY + scaledPy;
+    let lineY2 = frameY + scaledPy;
+
+    if (Math.abs(lR_b) > 1e-7) {
+      const u0 = -160.0;
+      const u1 = 160.0;
+      const v0 = -(lR_a * u0 + lR_c) / lR_b;
+      const v1 = -(lR_a * u1 + lR_c) / lR_b;
+      lineY1 = frameY + ((v0 + 200.0) / 400.0) * frameH;
+      lineY2 = frameY + ((v1 + 200.0) / 400.0) * frameH;
+    } else {
+      lineY1 = frameY;
+      lineY2 = frameY + frameH;
+    }
+
+    ctx6.strokeStyle = tc.pink;
+    ctx6.lineWidth = 2.5;
+    ctx6.beginPath();
+    ctx6.moveTo(rightX, lineY1);
+    ctx6.lineTo(rightX + frameW, lineY2);
+    ctx6.stroke();
+
+    ctx6.fillStyle = tc.pink;
+    ctx6.font = '10px "JetBrains Mono"';
+    ctx6.fillText('l_R = F · p_L (Epipolar Line)', rightX + 12, Math.max(frameY + 20, Math.min(frameY + frameH - 10, lineY1 - 8)));
+
+    const candidates = [0.25, 0.55, 0.82];
+    candidates.forEach((t_val, idx) => {
+      const candX = rightX + frameW * t_val;
+      const candY = lineY1 + (lineY2 - lineY1) * t_val;
+      if (candY >= frameY && candY <= frameY + frameH) {
+        ctx6.fillStyle = tc.cyan;
+        ctx6.beginPath(); ctx6.arc(candX, candY, 4, 0, Math.PI*2); ctx6.fill();
+        ctx6.fillText(`p_${idx+1}`, candX + 6, candY - 4);
+      }
+    });
+
+    const scanFactor = 0.5 + 0.4 * Math.sin(p6_scan_phase);
+    const scanX = rightX + frameW * scanFactor;
+    const scanY = lineY1 + (lineY2 - lineY1) * scanFactor;
+
+    if (scanY >= frameY && scanY <= frameY + frameH) {
+      ctx6.strokeStyle = tc.cyan;
+      ctx6.lineWidth = 2;
+      ctx6.beginPath(); ctx6.arc(scanX, scanY, 12, 0, Math.PI*2); ctx6.stroke();
+      ctx6.fillStyle = tc.cyan;
+      ctx6.beginPath(); ctx6.arc(scanX, scanY, 3, 0, Math.PI*2); ctx6.fill();
+    }
+
+    ctx6.fillStyle = tc.takeaway-bg || 'rgba(2, 132, 199, 0.12)';
+    ctx6.strokeStyle = tc.border;
+    ctx6.fillRect(leftX, h - 45, w - 2 * leftX, 35);
+    ctx6.strokeRect(leftX, h - 45, w - 2 * leftX, 35);
+
+    ctx6.fillStyle = tc.cyan;
+    ctx6.font = '11px "JetBrains Mono"';
+    ctx6.fillText(`1D Search Reduction: p_L(${px},${py}) restricts Right Match to Line l_R (slope=${((lineY2-lineY1)/frameW).toFixed(2)})`, leftX + 12, h - 23);
+  }
+
+  function renderPanel6_RectMode(w, h, px, py, tilt, pitch, roll, tc) {
+    const sectionH = (h - 65) / 2;
+    const topY = 25;
+    const botY = topY + sectionH + 25;
+    const fullW = w - 40;
+
+    ctx6.fillStyle = tc.bgCanvas;
+    ctx6.fillRect(20, topY, fullW, sectionH);
+    ctx6.strokeStyle = tc.red;
+    ctx6.lineWidth = 1.5;
+    ctx6.strokeRect(20, topY, fullW, sectionH);
+
+    ctx6.fillStyle = tc.red;
+    ctx6.font = '11px "JetBrains Mono"';
+    ctx6.fillText(`UNRECTIFIED STEREO: Non-Zero Rotation (yaw=${tilt}°, pitch=${pitch}°, roll=${roll}°) → Slanted Epipolar Lines`, 28, topY - 7);
+
+    const activePyNorm = (py / 400.0) * sectionH;
+    ctx6.lineWidth = 1.5;
+    for (let yOff = -40; yOff <= 40; yOff += 20) {
+      const lineY_start = topY + sectionH/2 + yOff + pitch * 1.5;
+      const lineY_end = topY + sectionH/2 + yOff * 0.3 + tilt * 2.5 + roll * 1.8;
+      
+      const isActive = Math.abs(topY + sectionH/2 + yOff - (topY + activePyNorm)) < 15;
+      ctx6.strokeStyle = isActive ? tc.cyan : tc.red;
+      ctx6.lineWidth = isActive ? 2.5 : 1.2;
+
+      ctx6.beginPath();
+      ctx6.moveTo(30, lineY_start);
+      ctx6.lineTo(20 + fullW - 30, lineY_end);
+      ctx6.stroke();
+    }
+
+    ctx6.fillStyle = tc.red;
+    ctx6.fillText('Epipole e_R (Converging Point)', 20 + fullW - 190, topY + sectionH/2 + tilt * 2);
+
+    ctx6.fillStyle = tc.bgCanvas;
+    ctx6.fillRect(20, botY, fullW, sectionH);
+    ctx6.strokeStyle = tc.green;
+    ctx6.lineWidth = 1.5;
+    ctx6.strokeRect(20, botY, fullW, sectionH);
+
+    ctx6.fillStyle = tc.green;
+    ctx6.fillText('RECTIFIED STEREO: Parallel Rig R = I (Horizontal Scanlines v_R = v_L, Epipole e_R → ∞)', 28, botY - 7);
+
+    for (let yOff = -40; yOff <= 40; yOff += 20) {
+      const lineY = botY + sectionH/2 + yOff;
+      const isActive = Math.abs(sectionH/2 + yOff - activePyNorm) < 15;
+      ctx6.strokeStyle = isActive ? tc.cyan : tc.green;
+      ctx6.lineWidth = isActive ? 2.5 : 1.2;
+
+      ctx6.beginPath();
+      ctx6.moveTo(30, lineY);
+      ctx6.lineTo(20 + fullW - 30, lineY);
+      ctx6.stroke();
+
+      if (isActive) {
+        ctx6.fillStyle = tc.cyan;
+        ctx6.fillText(`Active Scanline Row v = ${py} px`, 35, lineY - 6);
+      }
+    }
+    ctx6.fillStyle = tc.green;
+    ctx6.fillText('Horizontal Scanlines (Epipole at ∞)', 20 + fullW - 220, botY + sectionH/2);
+  }
+
+  /* =========================================================================
+     PANEL 7: LENS DISTORTION
+     ========================================================================= */
+  let c7, ctx7;
+
+  function initPanel7() {
+    c7 = document.getElementById('canvasDistortion');
+    if (c7) ctx7 = c7.getContext('2d');
+    updatePanel7();
+  }
+
+  function updatePanel7() {
+    if (!c7) return;
+    const vp = document.getElementById('viewportDistortion');
+    if (vp) {
+      c7.width = vp.clientWidth || 650;
+      c7.height = vp.clientHeight || 406;
+    }
+
+    const tc = getThemeColors();
+    const k1 = parseFloat(document.getElementById('p7_k1').value);
+    const k2 = parseFloat(document.getElementById('p7_k2').value);
+    const p1 = parseFloat(document.getElementById('p7_p1').value);
+    const p2 = parseFloat(document.getElementById('p7_p2').value);
+
+    document.getElementById('p7_k1_val').innerText = k1.toFixed(2);
+    document.getElementById('p7_k2_val').innerText = k2.toFixed(2);
+    document.getElementById('p7_p1_val').innerText = p1.toFixed(2);
+    document.getElementById('p7_p2_val').innerText = p2.toFixed(2);
+
+    const w = c7.width;
+    const h = c7.height;
+    ctx7.clearRect(0, 0, w, h);
+
+    ctx7.strokeStyle = tc.cyan;
+    ctx7.lineWidth = 1.5;
+    const cx = w / 2;
+    const cy = h / 2;
+    const scale = Math.min(w, h) * 0.35;
+
+    for (let x = -1; x <= 1; x += 0.2) {
+      ctx7.beginPath();
+      for (let y = -1; y <= 1; y += 0.05) {
+        const r2 = x*x + y*y;
+        const r4 = r2 * r2;
+        const x_dist = x * (1 + k1*r2 + k2*r4) + 2*p1*x*y + p2*(r2 + 2*x*x);
+        const y_dist = y * (1 + k1*r2 + k2*r4) + p1*(r2 + 2*y*y) + 2*p2*x*y;
+
+        const px = cx + x_dist * scale;
+        const py = cy + y_dist * scale;
+
+        if (y === -1) ctx7.moveTo(px, py);
+        else ctx7.lineTo(px, py);
+      }
+      ctx7.stroke();
+    }
+  }
+
+  /* =========================================================================
+     PANEL 8: 3D TRIANGULATION SANDBOX
+     ========================================================================= */
+  let p8_scene, p8_camera, p8_renderer, p8_controls, p8_container;
+
+  function initPanel8() {
+    p8_container = document.getElementById('viewportTriangulation');
+    if (!p8_container) return;
+
+    const w = p8_container.clientWidth || 650;
+    const h = p8_container.clientHeight || 406;
+
+    const tc = getThemeColors();
+    p8_scene = new THREE.Scene();
+    p8_scene.background = new THREE.Color(tc.threeBg);
+
+    p8_camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 100);
+    p8_camera.position.set(3, 2, 4);
+
+    p8_renderer = new THREE.WebGLRenderer({ antialias: true });
+    p8_renderer.setSize(w, h);
+    p8_container.appendChild(p8_renderer.domElement);
+
+    p8_controls = new THREE.OrbitControls(p8_camera, p8_renderer.domElement);
+    p8_controls.enableDamping = true;
+
+    const gridHelper = new THREE.GridHelper(8, 16, 0x0284c7, tc.threeGrid);
+    p8_scene.add(gridHelper);
+
+    function animateP8() {
+      requestAnimationFrame(animateP8);
+      if (p8_controls) p8_controls.update();
+      if (p8_renderer && p8_scene && p8_camera) p8_renderer.render(p8_scene, p8_camera);
+    }
+    animateP8();
+
+    updatePanel8();
+  }
+
+  function updatePanel8() {
+    if (!p8_container) return;
+    const b = parseFloat(document.getElementById('p8_b').value);
+    const f = parseFloat(document.getElementById('p8_f').value);
+    const noise = parseFloat(document.getElementById('p8_noise').value);
+
+    document.getElementById('p8_b_val').innerText = b.toFixed(2) + ' m';
+    document.getElementById('p8_f_val').innerText = f.toFixed(0) + ' px';
+    document.getElementById('p8_noise_val').innerText = noise.toFixed(1) + ' px';
+
+    const err = (noise * 0.02 * (2.8 * 2.8)) / (f * b);
+    if (document.getElementById('p8_err')) document.getElementById('p8_err').innerText = err.toFixed(3) + ' m';
+  }
+
+  /* =========================================================================
+     PANEL 9: HOMOGENEOUS COORDINATES INTUITION
+     ========================================================================= */
+  let c9, ctx9;
+
+  function initPanel9() {
+    c9 = document.getElementById('canvasHomogeneous');
+    if (c9) ctx9 = c9.getContext('2d');
+    updatePanel9();
+  }
+
+  function updatePanel9() {
+    if (!c9) return;
+    const vp = document.getElementById('viewportHomogeneous');
+    if (vp) {
+      c9.width = vp.clientWidth || 650;
+      c9.height = vp.clientHeight || 406;
+    }
+
+    const tc = getThemeColors();
+    const x = parseFloat(document.getElementById('p9_x').value);
+    const y = parseFloat(document.getElementById('p9_y').value);
+    const w_val = parseFloat(document.getElementById('p9_w').value);
+
+    document.getElementById('p9_x_val').innerText = x.toFixed(2);
+    document.getElementById('p9_y_val').innerText = y.toFixed(2);
+    document.getElementById('p9_w_val').innerText = w_val.toFixed(2);
+
+    const x_euclid = x / w_val;
+    const y_euclid = y / w_val;
+
+    if (document.getElementById('p9_euclid_res')) document.getElementById('p9_euclid_res').innerText = `(${x_euclid.toFixed(2)}, ${y_euclid.toFixed(2)})`;
+
+    const w = c9.width;
+    const h = c9.height;
+    ctx9.clearRect(0, 0, w, h);
+
+    const cx = w * 0.4;
+    const cy = h * 0.6;
+    const scale = 50;
+
+    ctx9.fillStyle = tc.pink;
+    ctx9.beginPath(); ctx9.arc(cx, cy, 6, 0, Math.PI*2); ctx9.fill();
+    ctx9.fillText('Origin (0,0,0)', cx - 35, cy + 20);
+
+    const pX = cx + x * scale;
+    const pY = cy - y * scale;
+
+    ctx9.strokeStyle = tc.cyan;
+    ctx9.lineWidth = 2.5;
+    ctx9.beginPath(); ctx9.moveTo(cx, cy); ctx9.lineTo(pX, pY); ctx9.stroke();
+
+    ctx9.fillStyle = tc.cyan;
+    ctx9.beginPath(); ctx9.arc(pX, pY, 7, 0, Math.PI*2); ctx9.fill();
+    ctx9.fillText(`P_homo [${x}, ${y}, ${w_val}]`, pX + 10, pY - 8);
+
+    const planeY = cy - 1 * scale;
+    ctx9.strokeStyle = tc.amber;
+    ctx9.lineWidth = 1.5;
+    ctx9.setLineDash([4, 4]);
+    ctx9.beginPath(); ctx9.moveTo(50, planeY); ctx9.lineTo(w - 50, planeY); ctx9.stroke();
+    ctx9.setLineDash([]);
+    ctx9.fillStyle = tc.amber;
+    ctx9.fillText('Projective Plane (w = 1.0)', 55, planeY - 6);
+
+    const normX = cx + x_euclid * scale;
+    ctx9.fillStyle = tc.green;
+    ctx9.beginPath(); ctx9.arc(normX, planeY, 7, 0, Math.PI*2); ctx9.fill();
+    ctx9.fillText(`Normalized (${x_euclid.toFixed(2)}, ${y_euclid.toFixed(2)})`, normX + 10, planeY + 16);
+  }
+
+  function onWindowResizeThree(renderer, camera, container) {
+    if (!renderer || !camera || !container) return;
+    const w = container.clientWidth;
+    const h = container.clientHeight || 406;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+
+  window.onload = function() {
+    renderMathInElement(document.body, {
+      delimiters: [
+        {left: '$$', right: '$$', display: true},
+        {left: '$', right: '$', display: false}
+      ]
+    });
+
+    initPanel1();
+    initPanel2();
+    initPanel3();
+    initPanel4();
+    initPanel5();
+    initPanel6();
+    initPanel7();
+    initPanel8();
+    initPanel9();
+
+    if (window.ResizeObserver) {
+      const observer = new ResizeObserver(() => {
+        if (activeTab === 3 && p3_renderer) onWindowResizeThree(p3_renderer, p3_camera, p3_container);
+        if (activeTab === 8 && p8_renderer) onWindowResizeThree(p8_renderer, p8_camera, p8_container);
+        updatePanel1();
+        updatePanel2();
+        updatePanel3();
+        updatePanel4();
+        updatePanel5();
+        updatePanel6();
+        updatePanel7();
+        updatePanel8();
+        updatePanel9();
+      });
+      const viewports = document.querySelectorAll('.visual-viewport');
+      viewports.forEach(vp => observer.observe(vp));
+    }
+  };
+</script>
+</body>
+</html>
