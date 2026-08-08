@@ -76,6 +76,8 @@ class BinaryPacketDecoder:
         R = np.array(metadata["extrinsics_uw_to_main"]["rotation_matrix_3x3"], dtype=np.float64)
         T = np.array(metadata["extrinsics_uw_to_main"]["translation_vector_mm"], dtype=np.float64)
 
+        telemetry = metadata.get("telemetry", {})
+
         return {
             "frame_id": frame_id,
             "pts_ns": pts_ns,
@@ -85,7 +87,8 @@ class BinaryPacketDecoder:
             "K_uw": K_uw,
             "R": R,
             "T": T,
-            "metadata": metadata
+            "metadata": metadata,
+            "telemetry": telemetry
         }
 
 
@@ -173,7 +176,8 @@ class IOSBridgeServer:
                     "rotation_matrix_3x3": frame_data["R"].tolist(),
                     "translation_vector_mm": frame_data["T"].tolist()
                 }
-            }
+            },
+            "telemetry": frame_data.get("telemetry", {})
         }
         self.captured_frames.append(frame_entry)
 
@@ -235,10 +239,15 @@ class IOSBridgeServer:
                     self.frame_count += 1
                     self.save_frame_to_dataset(frame_data)
 
+                    telemetry = frame_data.get("telemetry", {})
+                    hw_cost = telemetry.get("hardware_cost", 0.0)
+                    if hw_cost > 1.0:
+                        print(f"[IOSBridgeServer] WARNING: Hardware cost budget exceeded (cost: {hw_cost:.2f} > 1.0)! AVFoundation frames may drop or output solid black.")
+
                     elapsed = time.time() - self.start_time
                     fps = self.frame_count / elapsed if elapsed > 0 else 0
                     if self.frame_count % 30 == 0:
-                        print(f"[IOSBridgeServer] Streamed Frame #{frame_data['frame_id']} | FPS: {fps:.1f}")
+                        print(f"[IOSBridgeServer] Streamed Frame #{frame_data['frame_id']} | FPS: {fps:.1f} | Hardware Cost: {hw_cost:.2f}")
 
                     # Real-Time Inspection: update depth extraction asynchronously every 15 frames (and on frame 1)
                     if self.frame_count % 15 == 0 or self.frame_count == 1:

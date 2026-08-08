@@ -57,6 +57,38 @@ class TestIOSBridge(unittest.TestCase):
         self.assertEqual(frame_data["img_main"].shape, (480, 640, 3))
         self.assertEqual(frame_data["img_uw"].shape, (480, 640, 3))
 
+    def test_telemetry_decoding(self):
+        img_dummy = np.zeros((100, 100, 3), dtype=np.uint8)
+        _, img_bytes = cv2.imencode('.jpg', img_dummy)
+
+        metadata = {
+            "main": {"fx": 1000.0, "fy": 1000.0, "cx": 320.0, "cy": 240.0},
+            "ultrawide": {"fx": 500.0, "fy": 500.0, "cx": 320.0, "cy": 240.0},
+            "extrinsics_uw_to_main": {
+                "rotation_matrix_3x3": np.eye(3).tolist(),
+                "translation_vector_mm": [19.5, 0.0, 0.0]
+            },
+            "telemetry": {
+                "hardware_cost": 0.85,
+                "is_multi_cam_supported": True
+            }
+        }
+        meta_bytes = json.dumps(metadata).encode('utf-8')
+        header = struct.pack(
+            HEADER_STRUCT,
+            HEADER_MAGIC,
+            1, 0, 101, 1000000,
+            len(meta_bytes),
+            len(img_bytes),
+            len(img_bytes)
+        )
+        payload = header + meta_bytes + img_bytes.tobytes() + img_bytes.tobytes()
+        frame_data = BinaryPacketDecoder.decode(payload)
+
+        self.assertIn("telemetry", frame_data)
+        self.assertAlmostEqual(frame_data["telemetry"]["hardware_cost"], 0.85)
+        self.assertTrue(frame_data["telemetry"]["is_multi_cam_supported"])
+
     def test_cli_subprocess_execution(self):
         import subprocess
         import sys
