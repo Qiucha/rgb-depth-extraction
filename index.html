@@ -72,14 +72,6 @@
       --takeaway-bg: rgba(2, 132, 199, 0.06);
       --takeaway-border: rgba(2, 132, 199, 0.25);
       --takeaway-text: #0f172a;
-
-      --pros-bg: rgba(5, 150, 105, 0.06);
-      --pros-border: rgba(5, 150, 105, 0.25);
-      --pros-text: #065f46;
-
-      --cons-bg: rgba(220, 38, 38, 0.06);
-      --cons-border: rgba(220, 38, 38, 0.25);
-      --cons-text: #991b1b;
     }
 
     [data-theme="dark"] {
@@ -122,14 +114,6 @@
       --takeaway-bg: rgba(0, 242, 254, 0.08);
       --takeaway-border: rgba(0, 242, 254, 0.3);
       --takeaway-text: #f8fafc;
-
-      --pros-bg: rgba(16, 185, 129, 0.1);
-      --pros-border: rgba(16, 185, 129, 0.3);
-      --pros-text: #34d399;
-
-      --cons-bg: rgba(239, 68, 68, 0.1);
-      --cons-border: rgba(239, 68, 68, 0.3);
-      --cons-text: #f87171;
     }
 
     * {
@@ -345,7 +329,34 @@
       }
     }
 
-    /* Viewport Display Area */
+    /* Viewport Display Area with External Title Header Bar */
+    .viewport-outer-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .viewport-header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-dark);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-md);
+      padding: 6px 12px;
+    }
+
+    .viewport-title-text {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .visual-viewport {
       position: relative;
       width: 100%;
@@ -354,23 +365,6 @@
       border-radius: var(--radius-lg);
       overflow: hidden;
       border: 1px solid var(--bg-card-border);
-    }
-
-    .viewport-overlay-badge {
-      position: absolute;
-      top: 12px;
-      left: 12px;
-      z-index: 10;
-      background: var(--bg-card);
-      border: 1px solid var(--bg-card-border);
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-weight: 600;
-      pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
 
     canvas {
@@ -500,85 +494,41 @@
       color: var(--output-val);
     }
 
-    /* Trade-offs Card (Pros vs Cons) */
-    .tradeoffs-card {
-      background: var(--bg-card);
-      border: 1px solid var(--bg-card-border);
+    /* Key Intuition Takeaway Box (Bullet Points) */
+    .takeaway-box {
+      background: var(--takeaway-bg);
+      border: 1px solid var(--takeaway-border);
       border-radius: var(--radius-lg);
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
+      padding: 12px 16px;
+      color: var(--takeaway-text);
+      font-size: 0.8rem;
+      line-height: 1.5;
     }
 
-    .tradeoffs-header {
+    .takeaway-title {
       font-size: 0.76rem;
       font-weight: 700;
-      color: var(--accent-amber);
+      color: var(--accent-cyan);
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      margin-bottom: 6px;
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
-    .tradeoffs-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
+    .takeaway-list {
+      padding-left: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
     }
 
-    @media (max-width: 600px) {
-      .tradeoffs-grid {
-        grid-template-columns: 1fr;
-      }
+    .takeaway-list li {
+      margin-bottom: 2px;
     }
 
-    .tradeoff-box {
-      border-radius: var(--radius-md);
-      padding: 10px 12px;
-      font-size: 0.78rem;
-      line-height: 1.4;
-    }
-
-    .tradeoff-box.pros {
-      background: var(--pros-bg);
-      border: 1px solid var(--pros-border);
-      color: var(--pros-text);
-    }
-
-    .tradeoff-box.cons {
-      background: var(--cons-bg);
-      border: 1px solid var(--cons-border);
-      color: var(--cons-text);
-    }
-
-    .tradeoff-box h4 {
-      font-size: 0.74rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .tradeoff-box.pros h4 { color: var(--accent-green); }
-    .tradeoff-box.cons h4 { color: var(--accent-red); }
-
-    .tradeoff-box ul {
-      padding-left: 14px;
-    }
-
-    /* Key Intuition Takeaway Box */
-    .takeaway-box {
-      background: var(--takeaway-bg);
-      border: 1px solid var(--takeaway-border);
-      border-radius: var(--radius-lg);
-      padding: 12px 14px;
-      color: var(--takeaway-text);
-      font-size: 0.8rem;
-      line-height: 1.45;
-    }
-
-    .takeaway-box strong {
+    .takeaway-list strong {
       color: var(--accent-cyan);
     }
 
@@ -657,8 +607,8 @@
     <div class="preset-toolbar">
       <span class="preset-label">Presets:</span>
       <div class="preset-btn-group">
-        <button class="preset-btn" onclick="applyPreset('standard')">Standard Pin-hole (f=800, B=0.12m)</button>
-        <button class="preset-btn" onclick="applyPreset('wide_extreme')">Wide-Angle & Extreme Stereo (f=220, B=0.65m)</button>
+        <button class="preset-btn" onclick="applyPreset('standard')">Standard Pin-hole (f=400, B=0.12m)</button>
+        <button class="preset-btn" onclick="applyPreset('wide_extreme')">Wide-Angle & Extreme Stereo (f=220, B=0.45m)</button>
       </div>
       <button class="theme-btn" id="themeToggleBtn" onclick="toggleTheme()">☀️ Light Theme</button>
     </div>
@@ -710,9 +660,13 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportPinhole">
-            <span class="viewport-overlay-badge">Interactive 2D Optics Ray Tracer (16:10 Retina)</span>
-            <canvas id="canvasPinhole" width="650" height="406"></canvas>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <span class="viewport-title-text">Interactive 2D Optics Ray Tracer (16:10 Retina)</span>
+            </div>
+            <div class="visual-viewport" id="viewportPinhole">
+              <canvas id="canvasPinhole" width="650" height="406"></canvas>
+            </div>
           </div>
 
           <div class="control-math-section">
@@ -727,9 +681,9 @@
               <div class="slider-group">
                 <div class="slider-header">
                   <span class="slider-label">Focal Length ($f$ in pixels):</span>
-                  <span class="slider-val" id="p1_f_val">800 px</span>
+                  <span class="slider-val" id="p1_f_val">400 px</span>
                 </div>
-                <input type="range" id="p1_f" min="150" max="1200" value="800" oninput="updatePanel1()">
+                <input type="range" id="p1_f" min="150" max="600" step="5" value="400" oninput="updatePanel1()">
               </div>
 
               <div class="slider-group">
@@ -759,44 +713,25 @@
               <div class="output-grid">
                 <div class="output-item">
                   <span class="output-item-lbl">Image Plane Height ($y$)</span>
-                  <span class="output-item-val" id="p1_y_img">68.6 px</span>
+                  <span class="output-item-val" id="p1_y_img">34.3 px</span>
                 </div>
                 <div class="output-item">
                   <span class="output-item-lbl">Final Pixel Coordinate ($v$)</span>
-                  <span class="output-item-val" id="p1_v_pixel">68.6 px</span>
+                  <span class="output-item-val" id="p1_v_pixel">34.3 px</span>
                 </div>
                 <div class="output-item">
                   <span class="output-item-lbl">Magnification Factor ($f/Z$)</span>
-                  <span class="output-item-val" id="p1_mag">228.6 px/m</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Pinhole Model vs Depth Hardware
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Pinhole Model)</h4>
-                  <ul>
-                    <li>Works with standard, low-cost RGB CMOS image sensors.</li>
-                    <li>Simple, elegant linear optics geometry used across all 3D vision algorithms.</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs ToF / LiDAR)</h4>
-                  <ul>
-                    <li>Loses 3D depth dimension ($Z$) during 2D flattening.</li>
-                    <li>Suffers from scale ambiguity (near small objects look identical to far large objects).</li>
-                  </ul>
+                  <span class="output-item-val" id="p1_mag">114.3 px/m</span>
                 </div>
               </div>
             </div>
 
             <div class="takeaway-box">
-              <strong>Key Intuition:</strong> Focal length ($f$) is the physical distance between the optical center (pinhole) and the sensor plane, expressed in pixel units. Increasing $f$ zooms in on distant objects, while decreasing distance $Z$ makes objects appear larger on the sensor.
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>Focal Length ($f$):</strong> Distance between optical pinhole and sensor plane in pixel units.</li>
+                <li><strong>Perspective Scale:</strong> Increasing $f$ zooms in on targets; decreasing distance $Z$ enlarges projected image height.</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -815,9 +750,13 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportIntrinsic">
-            <span class="viewport-overlay-badge">Live Sensor Grid Viewport (Width x Height)</span>
-            <canvas id="canvasIntrinsic" width="650" height="406"></canvas>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <span class="viewport-title-text">Live Sensor Grid & Pixel Skew Geometry Viewport</span>
+            </div>
+            <div class="visual-viewport" id="viewportIntrinsic">
+              <canvas id="canvasIntrinsic" width="650" height="406"></canvas>
+            </div>
           </div>
 
           <div class="control-math-section">
@@ -832,17 +771,17 @@
               <div class="slider-group">
                 <div class="slider-header">
                   <span class="slider-label">Focal Length $f_x$:</span>
-                  <span class="slider-val" id="p2_fx_val">800 px</span>
+                  <span class="slider-val" id="p2_fx_val">400 px</span>
                 </div>
-                <input type="range" id="p2_fx" min="100" max="1200" value="800" oninput="updatePanel2()">
+                <input type="range" id="p2_fx" min="150" max="600" step="5" value="400" oninput="updatePanel2()">
               </div>
 
               <div class="slider-group">
                 <div class="slider-header">
                   <span class="slider-label">Focal Length $f_y$:</span>
-                  <span class="slider-val" id="p2_fy_val">800 px</span>
+                  <span class="slider-val" id="p2_fy_val">400 px</span>
                 </div>
-                <input type="range" id="p2_fy" min="100" max="1200" value="800" oninput="updatePanel2()">
+                <input type="range" id="p2_fy" min="150" max="600" step="5" value="400" oninput="updatePanel2()">
               </div>
 
               <div class="slider-group">
@@ -875,31 +814,12 @@
               </div>
             </div>
 
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Intrinsic Matrix vs Hardware Sensors
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Intrinsic Matrix)</h4>
-                  <ul>
-                    <li>Provides exact metric pixel-to-ray 3D casting calibration.</li>
-                    <li>Standard offline calibration toolkits available (OpenCV / Kalibr).</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs Solid-State LiDAR)</h4>
-                  <ul>
-                    <li>Sensitive to thermal lens expansion and mechanical focus shifts over time.</li>
-                    <li>Direct range sensors (LiDAR/ToF) measure distances without needing optical intrinsic parameters.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
             <div class="takeaway-box">
-              <strong>Key Intuition:</strong> The $3 \times 4$ Homogeneous Intrinsic Matrix $\mathbf{K}_{3 \times 4} = [\mathbf{K}_{3 \times 3} \mid \mathbf{0}_{3 \times 1}]$ allows multiplying directly with $4 \times 1$ homogeneous 3D camera coordinates $[X_c, Y_c, Z_c, 1]^T$, eliminating matrix dimension mismatch when chaining camera pose transformations.
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>$3 \times 4$ Matrix Chain:</strong> Extends $\mathbf{K}$ with a zero column to multiply directly with $4 \times 1$ homogeneous 3D vectors.</li>
+                <li><strong>Axis Skew ($s$):</strong> Models non-orthogonal sensor hardware axes by shearing square pixel blocks into parallelograms ($\theta_{skew} = \arctan(s / f_y)$).</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -918,8 +838,11 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportExtrinsic">
-            <span class="viewport-overlay-badge">Interactive 3D Camera Pose Viewport (Drag to Rotate)</span>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <span class="viewport-title-text">Interactive 3D Camera Pose Viewport (Drag to Rotate)</span>
+            </div>
+            <div class="visual-viewport" id="viewportExtrinsic"></div>
           </div>
 
           <div class="control-math-section">
@@ -992,31 +915,12 @@
               </div>
             </div>
 
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Visual Extrinsics vs Hardware IMU/GPS
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Visual Extrinsics)</h4>
-                  <ul>
-                    <li>Enables 6-DOF relative motion tracking (Visual Odometry / SLAM).</li>
-                    <li>Allows multi-camera rig coordinate alignment without extra hardware.</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs Hardware IMU/GPS)</h4>
-                  <ul>
-                    <li>Pure visual pose estimation drifts in featureless environments (white walls, motion blur).</li>
-                    <li>Requires active loop closure to eliminate accumulated odometry drift.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
             <div class="takeaway-box">
-              <strong>Key Intuition:</strong> $\mathbf{R}$ rotates world axes to align with camera optical axes (Z-forward, X-right, Y-down), while $\mathbf{t}$ translates the origin. Camera position in world space is given by $\mathbf{C}_{world} = -\mathbf{R}^T \mathbf{t}$.
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>Rotation Matrix ($\mathbf{R}$):</strong> Rotates world axes to align with camera optical axes (Z-forward, X-right, Y-down).</li>
+                <li><strong>Camera Origin ($\mathbf{C}_w$):</strong> Absolute 3D camera position in world space is $\mathbf{C}_{world} = -\mathbf{R}^T \mathbf{t}$.</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1035,9 +939,13 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportPipeline">
-            <span class="viewport-overlay-badge">Full Transformation Pipeline Diagram</span>
-            <canvas id="canvasPipeline" width="650" height="406"></canvas>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <span class="viewport-title-text">Full Transformation Pipeline Diagram</span>
+            </div>
+            <div class="visual-viewport" id="viewportPipeline">
+              <canvas id="canvasPipeline" width="650" height="406"></canvas>
+            </div>
           </div>
 
           <div class="control-math-section">
@@ -1096,31 +1004,12 @@
               </div>
             </div>
 
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Projection Matrix vs Depth Hardware
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Projection Chain)</h4>
-                  <ul>
-                    <li>Extremely efficient single $3 \times 4$ matrix operation for GPU rasterization.</li>
-                    <li>Seamlessly unifies world pose, camera body, and pixel coordinates.</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs RGB-D Sensors)</h4>
-                  <ul>
-                    <li>Non-invertible forward projection (3D to 2D discards depth metric).</li>
-                    <li>Requires multi-view triangulation or active sensors to reconstruct 3D back.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
             <div class="takeaway-box">
-              <strong>Key Intuition:</strong> Multiplying world point $P_{world}$ by $\mathbf{P}$ maps 3D homogeneous coordinates directly to pixel homogeneous coordinates $[u \cdot Z_c, v \cdot Z_c, Z_c]^T$. Dividing by $Z_c$ performs the essential perspective projection.
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>Unified Matrix Operator:</strong> Multiplying world vector $P_w$ by $\mathbf{P}$ yields homogeneous pixel coordinates $[u Z_c, v Z_c, Z_c]^T$.</li>
+                <li><strong>Perspective Division:</strong> Dividing by camera depth $Z_c$ executes the non-linear perspective mapping onto the 2D sensor.</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1139,9 +1028,13 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportStereo">
-            <span class="viewport-overlay-badge">Stereo Epipolar Geometry & Depth Hyperbola</span>
-            <canvas id="canvasStereo" width="650" height="406"></canvas>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <span class="viewport-title-text">Stereo Epipolar Optics & Depth-Disparity Hyperbola Graph</span>
+            </div>
+            <div class="visual-viewport" id="viewportStereo">
+              <canvas id="canvasStereo" width="650" height="406"></canvas>
+            </div>
           </div>
 
           <div class="control-math-section">
@@ -1165,9 +1058,9 @@
               <div class="slider-group">
                 <div class="slider-header">
                   <span class="slider-label">Focal Length ($f$ in pixels):</span>
-                  <span class="slider-val" id="p5_f_val">700 px</span>
+                  <span class="slider-val" id="p5_f_val">400 px</span>
                 </div>
-                <input type="range" id="p5_f" min="300" max="1500" step="10" value="700" oninput="updatePanel5()">
+                <input type="range" id="p5_f" min="150" max="600" step="5" value="400" oninput="updatePanel5()">
               </div>
 
               <div class="slider-group">
@@ -1189,7 +1082,7 @@
               <div class="output-grid">
                 <div class="output-item">
                   <span class="output-item-lbl">Disparity ($d = x_L - x_R$)</span>
-                  <span class="output-item-val" id="p5_disp_val">33.6 px</span>
+                  <span class="output-item-val" id="p5_disp_val">19.2 px</span>
                 </div>
                 <div class="output-item">
                   <span class="output-item-lbl">Calculated Depth ($Z$)</span>
@@ -1197,36 +1090,17 @@
                 </div>
                 <div class="output-item">
                   <span class="output-item-lbl">Depth Error per 1px Disparity</span>
-                  <span class="output-item-val" id="p5_err_val">± 0.074 m</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Passive Stereo vs Active Depth Sensors (LiDAR/ToF)
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Passive Stereo)</h4>
-                  <ul>
-                    <li>Operates outdoors under direct bright sunlight (where IR structured light fails).</li>
-                    <li>Low hardware cost using dual standard CMOS sensors; high RGB-depth alignment.</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs Active LiDAR/ToF)</h4>
-                  <ul>
-                    <li>Fails on textureless surfaces (blank walls, uniform sky).</li>
-                    <li>Quadratic depth error decay ($\Delta Z \propto Z^2 / fB$ makes distant targets inaccurate).</li>
-                  </ul>
+                  <span class="output-item-val" id="p5_err_val">± 0.130 m</span>
                 </div>
               </div>
             </div>
 
             <div class="takeaway-box">
-              <strong>Key Intuition:</strong> Disparity $d$ is inversely proportional to depth $Z$. Close objects have high disparity (large shift), distant objects have small disparity. Notice how depth error scales quadratically ($\Delta Z \propto Z^2$), making far objects less precise!
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>Inverse Hyperbola Relationship:</strong> Disparity $d$ is inversely proportional to depth $Z = \frac{f \cdot B}{d}$.</li>
+                <li><strong>Quadratic Error Scaling:</strong> Depth measurement uncertainty grows quadratically with distance ($\Delta Z \propto \frac{Z^2}{fB} \Delta d$).</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1245,14 +1119,18 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportEpipolar">
-            <div style="position: absolute; top: 12px; left: 12px; z-index: 10; display: flex; gap: 6px; background: var(--bg-card); border: 1px solid var(--bg-card-border); padding: 4px; border-radius: 8px;">
-              <button class="mode-tab-btn active" id="p6_mode_3d" onclick="setPanel6Mode('3d')">3D Epipolar Rays & Plane</button>
-              <button class="mode-tab-btn" id="p6_mode_2d" onclick="setPanel6Mode('2d')">2D Search & Correspondences</button>
-              <button class="mode-tab-btn" id="p6_mode_rect" onclick="setPanel6Mode('rect')">Unrectified vs Rectified</button>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <div style="display: flex; gap: 6px;">
+                <button class="mode-tab-btn active" id="p6_mode_3d" onclick="setPanel6Mode('3d')">3D Epipolar Rays & Plane</button>
+                <button class="mode-tab-btn" id="p6_mode_2d" onclick="setPanel6Mode('2d')">2D Search & Correspondences</button>
+                <button class="mode-tab-btn" id="p6_mode_rect" onclick="setPanel6Mode('rect')">Unrectified vs Rectified</button>
+              </div>
+              <span class="viewport-title-text" id="p6_viewport_title">3D Optical Space: Baseline C_L-C_R & Epipolar Plane</span>
             </div>
-            <span class="viewport-overlay-badge" id="p6_viewport_title" style="top: 12px; right: 12px; left: auto;">3D Optical Geometry: Camera Centers C_L, C_R, Baseline & Epipolar Plane</span>
-            <canvas id="canvasEpipolar" width="650" height="406"></canvas>
+            <div class="visual-viewport" id="viewportEpipolar">
+              <canvas id="canvasEpipolar" width="650" height="406"></canvas>
+            </div>
           </div>
 
           <div class="control-math-section">
@@ -1261,7 +1139,6 @@
               <div class="math-display">
                 $$\mathbf{x}_R^T \mathbf{E} \mathbf{x}_L = 0 \quad (\text{Calibrated Rays}) \quad \iff \quad \mathbf{p}_R^T \mathbf{F} \mathbf{p}_L = 0 \quad (\text{Raw Pixels})$$
                 $$\mathbf{l}_R = \mathbf{F} \mathbf{p}_L = [a, b, c]^T \implies a \cdot u_R + b \cdot v_R + c = 0$$
-                $$\mathbf{F} \mathbf{e}_L = \mathbf{0}, \quad \mathbf{e}_R^T \mathbf{F} = \mathbf{0} \quad (\text{Epipoles as Null-Space Vectors})$$
               </div>
             </div>
 
@@ -1353,31 +1230,12 @@
               </div>
             </div>
 
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Epipolar Search vs 2D Matching
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Epipolar Constraint)</h4>
-                  <ul>
-                    <li>Reduces 2D correspondence search to 1D search along epipolar lines (100x search speedup).</li>
-                    <li>$\mathbf{E}$ and $\mathbf{F}$ matrices can be estimated directly from uncalibrated image pairs.</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs Direct Depth Sensors)</h4>
-                  <ul>
-                    <li>Requires sufficient camera motion (pure rotation degenerates $\mathbf{E}$ and baseline collapses).</li>
-                    <li>Degenerate configurations (planar scenes) cause 8-point algorithm instability.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
             <div class="takeaway-box">
-              <strong>Key Intuition:</strong> Epipolar geometry enforces that any 3D point $P$, left optical center $C_L$, and right optical center $C_R$ lie on a single 3D plane (the **epipolar plane**). This guarantees that matching a left pixel $p_L$ requires searching ONLY along the 1D epipolar line $l_R = \mathbf{F} p_L$ in the right image!
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>Epipolar Plane:</strong> Point $P$ and camera centers $C_L, C_R$ define a 3D plane constraining 2D feature matching.</li>
+                <li><strong>1D Search Reduction:</strong> Matching pixel $p_L$ requires searching ONLY along 1D epipolar line $l_R = \mathbf{F} p_L$ (100x search speedup).</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1396,9 +1254,13 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportDistortion">
-            <span class="viewport-overlay-badge">Distorted Grid Viewport (Ideal vs Distorted Sensor Grid)</span>
-            <canvas id="canvasDistortion" width="650" height="406"></canvas>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <span class="viewport-title-text">Distorted Sensor Grid Viewport (Ideal vs Distorted)</span>
+            </div>
+            <div class="visual-viewport" id="viewportDistortion">
+              <canvas id="canvasDistortion" width="650" height="406"></canvas>
+            </div>
           </div>
 
           <div class="control-math-section">
@@ -1444,31 +1306,12 @@
               </div>
             </div>
 
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Distortion Rectification vs Optical Lenses
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Polynomial Model)</h4>
-                  <ul>
-                    <li>Allows wide-angle & fisheye lenses to capture huge FOV while software-rectifying straight lines.</li>
-                    <li>Pure software correction avoiding expensive custom aberration-free physical optics.</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs Direct Depth Sensors)</h4>
-                  <ul>
-                    <li>Rectification distorts pixel resolution near edges and crops image borders.</li>
-                    <li>Sub-pixel interpolation during unwarping introduces slight image blurring.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
             <div class="takeaway-box">
-              <strong>Key Intuition:</strong> Radial distortion ($k_1, k_2$) curves straight lines near image edges (negative values cause **barrel distortion**, positive values cause **pincushion distortion**). Tangential distortion ($p_1, p_2$) occurs when lens elements are not perfectly parallel to the image sensor.
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>Radial Aberration ($k_1, k_2$):</strong> Curving lines near edges (negative $k_1 \to$ barrel distortion, positive $k_1 \to$ pincushion).</li>
+                <li><strong>Tangential Aberration ($p_1, p_2$):</strong> Skewing caused by unaligned sensor planes relative to optical lenses.</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1487,8 +1330,11 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportTriangulation">
-            <span class="viewport-overlay-badge">3D World View: Stereo Pair C_L / C_R & Target Object</span>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <span class="viewport-title-text">3D World View: Stereo Pair C_L / C_R & Target Object</span>
+            </div>
+            <div class="visual-viewport" id="viewportTriangulation"></div>
           </div>
 
           <div class="control-math-section">
@@ -1509,7 +1355,7 @@
                 </div>
                 <div class="output-item">
                   <span class="output-item-lbl">Computed Disparity ($d$)</span>
-                  <span class="output-item-val" id="p8_disp">34.3 px</span>
+                  <span class="output-item-val" id="p8_disp">17.1 px</span>
                 </div>
                 <div class="output-item">
                   <span class="output-item-lbl">Reconstructed 3D Depth ($Z_{rec}$)</span>
@@ -1534,9 +1380,9 @@
               <div class="slider-group">
                 <div class="slider-header">
                   <span class="slider-label">Focal Length ($f$):</span>
-                  <span class="slider-val" id="p8_f_val">800 px</span>
+                  <span class="slider-val" id="p8_f_val">400 px</span>
                 </div>
-                <input type="range" id="p8_f" min="200" max="1200" value="800" oninput="updatePanel8()">
+                <input type="range" id="p8_f" min="150" max="600" step="5" value="400" oninput="updatePanel8()">
               </div>
 
               <div class="slider-group">
@@ -1548,34 +1394,12 @@
               </div>
             </div>
 
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Passive Triangulation vs LiDAR Point Cloud
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Passive Triangulation)</h4>
-                  <ul>
-                    <li>No active emissions (laser-safe, stealthy, low power consumption).</li>
-                    <li>Generates dense 3D point cloud naturally aligned with RGB texture colors.</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs Solid-State LiDAR)</h4>
-                  <ul>
-                    <li>Occlusion masking holes (features visible in Left view may be blocked in Right view).</li>
-                    <li>Slower real-time performance due to high-dimensional matching complexity.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
             <div class="takeaway-box">
-              <strong>Complete Closed-Loop Pipeline:</strong> 
-              1. 3D Point $P(X,Y,Z)$ is projected into Left & Right cameras via $\mathbf{P}_L, \mathbf{P}_R$.<br>
-              2. Disparity $d = u_L - u_R$ is measured.<br>
-              3. Triangulation recovers 3D spatial coordinates: $Z = \frac{f \cdot B}{d}$, $X = \frac{(u_L - c_x) B}{d}$, $Y = \frac{(v_L - c_y) B}{d}$.
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>Forward Projection:</strong> Point $P(X,Y,Z)$ projects into Left & Right cameras via matrices $\mathbf{P}_L, \mathbf{P}_R$.</li>
+                <li><strong>Closed-Form Triangulation:</strong> Disparity $d = u_L - u_R$ yields $Z = \frac{f \cdot B}{d}$, $X = \frac{(u_L - c_x) B}{d}$, $Y = \frac{(v_L - c_y) B}{d}$.</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1594,9 +1418,13 @@
         </div>
 
         <div class="panel-content-grid">
-          <div class="visual-viewport" id="viewportHomogeneous">
-            <span class="viewport-overlay-badge">Interactive 4D Projective Ray to 3D Cartesian Projection</span>
-            <canvas id="canvasHomogeneous" width="650" height="406"></canvas>
+          <div class="viewport-outer-wrapper">
+            <div class="viewport-header-bar">
+              <span class="viewport-title-text">Interactive 4D Projective Ray to 3D Cartesian Projection</span>
+            </div>
+            <div class="visual-viewport" id="viewportHomogeneous">
+              <canvas id="canvasHomogeneous" width="650" height="406"></canvas>
+            </div>
           </div>
 
           <div class="control-math-section">
@@ -1654,31 +1482,12 @@
               </div>
             </div>
 
-            <div class="tradeoffs-card">
-              <div class="tradeoffs-header">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                Technique Trade-offs: Homogeneous Coordinates vs 3D Euclidean Space
-              </div>
-              <div class="tradeoffs-grid">
-                <div class="tradeoff-box pros">
-                  <h4>✓ Strengths (Homogeneous Space)</h4>
-                  <ul>
-                    <li>Converts non-linear vector addition ($\mathbf{R} \mathbf{x} + \mathbf{t}$) into a single linear matrix multiplication.</li>
-                    <li>Represents points at infinity ($W=0$) cleanly without division-by-zero crashes.</li>
-                  </ul>
-                </div>
-                <div class="tradeoff-box cons">
-                  <h4>✕ Weaknesses (vs 3D Euclidean)</h4>
-                  <ul>
-                    <li>Adds an extra dimension to all vectors ($4 \times 1$ instead of $3 \times 1$).</li>
-                    <li>Requires explicit projective normalization (dividing by $W$ or $Z$) to return to physical 3D space.</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
             <div class="takeaway-box">
-              <strong>Key Intuition:</strong> Homogeneous coordinates embed $N$-dimensional space into $(N+1)$-dimensional projective space. This allows translation and perspective division to be expressed as linear matrix multiplications, making camera projection chains ($\mathbf{P} = \mathbf{K}[\mathbf{R} \mid \mathbf{t}]$) unified and GPU-accelerated.
+              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
+              <ul class="takeaway-list">
+                <li><strong>Space Elevation:</strong> Embeds 3D Cartesian coordinates into 4D projective space $(X, Y, Z, W)^T$.</li>
+                <li><strong>Linear Matrix Composition:</strong> Converts non-linear vector translations ($\mathbf{R}\mathbf{x} + \mathbf{t}$) and infinite points ($W=0$) into linear GPU matrix operations.</li>
+              </ul>
             </div>
           </div>
         </div>
@@ -1815,13 +1624,13 @@
 
   function applyPreset(presetType) {
     if (presetType === 'standard') {
-      if (document.getElementById('p1_f')) document.getElementById('p1_f').value = 800;
+      if (document.getElementById('p1_f')) document.getElementById('p1_f').value = 400;
       if (document.getElementById('p1_Z')) document.getElementById('p1_Z').value = 3.5;
       if (document.getElementById('p1_Y')) document.getElementById('p1_Y').value = 0.3;
       if (document.getElementById('p1_cy')) document.getElementById('p1_cy').value = 0;
 
-      if (document.getElementById('p2_fx')) document.getElementById('p2_fx').value = 800;
-      if (document.getElementById('p2_fy')) document.getElementById('p2_fy').value = 800;
+      if (document.getElementById('p2_fx')) document.getElementById('p2_fx').value = 400;
+      if (document.getElementById('p2_fy')) document.getElementById('p2_fy').value = 400;
       if (document.getElementById('p2_cx')) document.getElementById('p2_cx').value = 320;
       if (document.getElementById('p2_cy')) document.getElementById('p2_cy').value = 240;
       if (document.getElementById('p2_s')) document.getElementById('p2_s').value = 0;
@@ -1838,7 +1647,7 @@
       if (document.getElementById('p4_zw')) document.getElementById('p4_zw').value = 3.5;
 
       if (document.getElementById('p5_B')) document.getElementById('p5_B').value = 0.12;
-      if (document.getElementById('p5_f')) document.getElementById('p5_f').value = 800;
+      if (document.getElementById('p5_f')) document.getElementById('p5_f').value = 400;
       if (document.getElementById('p5_Z')) document.getElementById('p5_Z').value = 3.5;
       if (document.getElementById('p5_doffs')) document.getElementById('p5_doffs').value = 0;
 
@@ -1855,7 +1664,7 @@
       if (document.getElementById('p7_p2')) document.getElementById('p7_p2').value = 0.0;
 
       if (document.getElementById('p8_b')) document.getElementById('p8_b').value = 0.12;
-      if (document.getElementById('p8_f')) document.getElementById('p8_f').value = 800;
+      if (document.getElementById('p8_f')) document.getElementById('p8_f').value = 400;
       if (document.getElementById('p8_noise')) document.getElementById('p8_noise').value = 0.0;
 
       if (document.getElementById('p9_x')) document.getElementById('p9_x').value = 1.2;
@@ -1886,7 +1695,7 @@
       if (document.getElementById('p4_zw')) document.getElementById('p4_zw').value = 1.2;
 
       if (document.getElementById('p5_B')) document.getElementById('p5_B').value = 0.45;
-      if (document.getElementById('p5_f')) document.getElementById('p5_f').value = 350;
+      if (document.getElementById('p5_f')) document.getElementById('p5_f').value = 220;
       if (document.getElementById('p5_Z')) document.getElementById('p5_Z').value = 1.2;
       if (document.getElementById('p5_doffs')) document.getElementById('p5_doffs').value = 10;
 
@@ -1903,7 +1712,7 @@
       if (document.getElementById('p7_p2')) document.getElementById('p7_p2').value = -0.02;
 
       if (document.getElementById('p8_b')) document.getElementById('p8_b').value = 0.45;
-      if (document.getElementById('p8_f')) document.getElementById('p8_f').value = 350;
+      if (document.getElementById('p8_f')) document.getElementById('p8_f').value = 220;
       if (document.getElementById('p8_noise')) document.getElementById('p8_noise').value = 2.5;
 
       if (document.getElementById('p9_x')) document.getElementById('p9_x').value = 3.5;
@@ -1947,10 +1756,10 @@
     const Y = parseFloat(document.getElementById('p1_Y').value);
     const cy = parseFloat(document.getElementById('p1_cy').value);
 
-    document.getElementById('p1_f_val').innerText = f + ' px';
+    document.getElementById('p1_f_val').innerText = f.toFixed(0) + ' px';
     document.getElementById('p1_Z_val').innerText = Z.toFixed(1) + ' m';
     document.getElementById('p1_Y_val').innerText = Y.toFixed(1) + ' m';
-    document.getElementById('p1_cy_val').innerText = cy + ' px';
+    document.getElementById('p1_cy_val').innerText = cy.toFixed(0) + ' px';
 
     const y_img = f * (Y / Z);
     const v_pixel = y_img + cy;
@@ -2006,7 +1815,7 @@
     ctx1.fillStyle = tc.sensorPlane;
     ctx1.font = '11px "JetBrains Mono"';
     ctx1.fillText('Sensor Plane', Math.max(10, sensorX - 45), 32);
-    ctx1.fillText('f = ' + f + 'px', Math.max(10, (sensorX + pinholeX)/2 - 20), opticalAxisY - 10);
+    ctx1.fillText('f = ' + f.toFixed(0) + 'px', Math.max(10, (sensorX + pinholeX)/2 - 20), opticalAxisY - 10);
 
     ctx1.strokeStyle = tc.sensorPlane;
     ctx1.beginPath();
@@ -2103,26 +1912,26 @@
     const cx = parseFloat(document.getElementById('p2_cx').value);
     const cy = parseFloat(document.getElementById('p2_cy').value);
 
-    document.getElementById('p2_fx_val').innerText = fx + ' px';
-    document.getElementById('p2_fy_val').innerText = fy + ' px';
+    document.getElementById('p2_fx_val').innerText = fx.toFixed(0) + ' px';
+    document.getElementById('p2_fy_val').innerText = fy.toFixed(0) + ' px';
     document.getElementById('p2_s_val').innerText = s.toFixed(1);
-    document.getElementById('p2_cx_val').innerText = cx + ' px';
-    document.getElementById('p2_cy_val').innerText = cy + ' px';
+    document.getElementById('p2_cx_val').innerText = cx.toFixed(0) + ' px';
+    document.getElementById('p2_cy_val').innerText = cy.toFixed(0) + ' px';
 
     const matHTML = `
       <table class="matrix-table">
         <tr>
           <td rowspan="3" class="matrix-bracket"></td>
-          <td class="matrix-cell-active">${fx}</td>
+          <td class="matrix-cell-active">${fx.toFixed(0)}</td>
           <td class="matrix-cell-active" style="background: rgba(124, 58, 237, 0.25); color: ${tc.purple};">${s.toFixed(1)}</td>
-          <td class="matrix-cell-active" style="background: rgba(2, 132, 199, 0.2); color: ${tc.cyan};">${cx}</td>
+          <td class="matrix-cell-active" style="background: rgba(2, 132, 199, 0.2); color: ${tc.cyan};">${cx.toFixed(0)}</td>
           <td>0</td>
           <td rowspan="3" class="matrix-bracket"></td>
         </tr>
         <tr>
           <td>0</td>
-          <td class="matrix-cell-active">${fy}</td>
-          <td class="matrix-cell-active" style="background: rgba(2, 132, 199, 0.2); color: ${tc.cyan};">${cy}</td>
+          <td class="matrix-cell-active">${fy.toFixed(0)}</td>
+          <td class="matrix-cell-active" style="background: rgba(2, 132, 199, 0.2); color: ${tc.cyan};">${cy.toFixed(0)}</td>
           <td>0</td>
         </tr>
         <tr>
@@ -2266,7 +2075,7 @@
   }
 
   /* =========================================================================
-     PANEL 3: EXTRINSIC MATRIX [R|t] (THREE.JS 3D VIEWPORT)
+     PANEL 3: EXTRINSIC MATRIX [R|t] (THREE.JS 3D VIEWPORT WITH THICK LINES)
      ========================================================================= */
   let p3_scene, p3_camera, p3_renderer, p3_controls, p3_frustumGroup;
   let p3_container;
@@ -2524,7 +2333,7 @@
     const normX = Xc / Zc;
     const normY = Yc / Zc;
 
-    const fx = 500, fy = 500, cx = 320, cy = 240;
+    const fx = 400, fy = 400, cx = 320, cy = 240;
     const u = fx * normX + cx;
     const v = fy * normY + cy;
 
@@ -2772,7 +2581,7 @@
     // --- SUB-DIAGRAM 1 (TOP): SIMILAR TRIANGLES FOCAL OPTICS ---
     const top_camL_x = midX - b_px / 2;
     const top_camR_x = midX + b_px / 2;
-    const f_vis_offset = 16 + (f / 800) * 32;
+    const f_vis_offset = 16 + (f / 600) * 32;
     const top_sensorY = h * 0.5 - 35;
     const top_pinholeY = top_sensorY - f_vis_offset;
 
@@ -2966,7 +2775,7 @@
 
     const titleEl = document.getElementById('p6_viewport_title');
     if (titleEl) {
-      if (mode === '3d') titleEl.innerText = '3D Optical Space: Baseline C_L-C_R, Epipolar Plane & Epipoles e_L, e_R';
+      if (mode === '3d') titleEl.innerText = '3D Optical Space: Baseline C_L-C_R & Epipolar Plane';
       else if (mode === '2d') titleEl.innerText = '2D Image Correspondences: Scanline Search along Epipolar Line l_R';
       else if (mode === 'rect') titleEl.innerText = 'Comparison: Unrectified (Finite Epipole) vs Rectified (Epipole at ∞)';
     }
@@ -2996,8 +2805,8 @@
     let pitch = isRectified ? 0 : parseFloat(document.getElementById('p6_pitch') ? document.getElementById('p6_pitch').value : 0);
     let roll = isRectified ? 0 : parseFloat(document.getElementById('p6_roll') ? document.getElementById('p6_roll').value : 0);
 
-    document.getElementById('p6_px_val').innerText = px + ' px';
-    document.getElementById('p6_py_val').innerText = py + ' px';
+    document.getElementById('p6_px_val').innerText = px.toFixed(0) + ' px';
+    document.getElementById('p6_py_val').innerText = py.toFixed(0) + ' px';
     document.getElementById('p6_tilt_val').innerText = tilt.toFixed(1) + '°';
     if (document.getElementById('p6_pitch_val')) document.getElementById('p6_pitch_val').innerText = pitch.toFixed(1) + '°';
     if (document.getElementById('p6_roll_val')) document.getElementById('p6_roll_val').innerText = roll.toFixed(1) + '°';
@@ -3074,7 +2883,7 @@
     const matE_El = document.getElementById('p6_matrix_E_display');
     if (matE_El) matE_El.innerHTML = matE_HTML;
 
-    const focal = 500.0;
+    const focal = 400.0;
     const F = [
       [E[0][0]/(focal*focal), E[0][1]/(focal*focal), E[0][2]/focal],
       [E[1][0]/(focal*focal), E[1][1]/(focal*focal), E[1][2]/focal],
