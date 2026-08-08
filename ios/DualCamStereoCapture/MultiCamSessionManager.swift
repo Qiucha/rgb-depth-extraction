@@ -80,19 +80,21 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
         let status = AVCaptureDevice.authorizationStatus(for: .video)
         switch status {
         case .authorized:
-            completion(.success(()))
+            DispatchQueue.main.async { completion(.success(())) }
         case .denied, .restricted:
-            completion(.failure(.cameraPermissionDenied))
+            DispatchQueue.main.async { completion(.failure(.cameraPermissionDenied)) }
         case .notDetermined:
             AVCaptureDevice.requestAccess(for: .video) { granted in
-                if granted {
-                    completion(.success(()))
-                } else {
-                    completion(.failure(.cameraPermissionDenied))
+                DispatchQueue.main.async {
+                    if granted {
+                        completion(.success(()))
+                    } else {
+                        completion(.failure(.cameraPermissionDenied))
+                    }
                 }
             }
         @unknown default:
-            completion(.failure(.cameraPermissionDenied))
+            DispatchQueue.main.async { completion(.failure(.cameraPermissionDenied)) }
         }
     }
 

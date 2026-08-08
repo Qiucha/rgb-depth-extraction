@@ -76,20 +76,27 @@ struct ContentView: View {
         }
 
         if !multiCamManager.checkMultiCamSupport() {
-            statusMessage = "MultiCam not supported on this iPhone model."
+            statusMessage = "MultiCam not supported on this iPhone model or when running in Simulator."
             return
         }
 
-        do {
-            try multiCamManager.configureSession()
-            multiCamManager.onFrameCaptured = { packet in
-                if isStreaming {
-                    streamer.sendPacket(packet)
+        multiCamManager.checkCameraAuthorization { result in
+            switch result {
+            case .success:
+                do {
+                    try self.multiCamManager.configureSession()
+                    self.multiCamManager.onFrameCaptured = { packet in
+                        if self.isStreaming {
+                            self.streamer.sendPacket(packet)
+                        }
+                    }
+                    self.statusMessage = "Camera configured (Dual Wide + Ultra-Wide)"
+                } catch {
+                    self.statusMessage = "Config Error: \(error.localizedDescription)"
                 }
+            case .failure(let error):
+                self.statusMessage = "Camera Error: \(error.localizedDescription)"
             }
-            statusMessage = "Camera configured (Dual Wide + Ultra-Wide)"
-        } catch {
-            statusMessage = "Config Error: \(error.localizedDescription)"
         }
     }
 

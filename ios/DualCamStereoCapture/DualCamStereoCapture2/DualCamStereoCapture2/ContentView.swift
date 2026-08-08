@@ -68,21 +68,35 @@ struct ContentView: View {
     }
 
     private func setupCapture() {
+        streamer.onError = { errorText in
+            DispatchQueue.main.async {
+                self.isStreaming = false
+                self.statusMessage = "⚠️ \(errorText)"
+            }
+        }
+
         if !multiCamManager.checkMultiCamSupport() {
-            statusMessage = "MultiCam not supported on this iPhone model."
+            statusMessage = "MultiCam not supported on this iPhone model or when running in Simulator."
             return
         }
 
-        do {
-            try multiCamManager.configureSession()
-            multiCamManager.onFrameCaptured = { packet in
-                if isStreaming {
-                    streamer.sendPacket(packet)
+        multiCamManager.checkCameraAuthorization { result in
+            switch result {
+            case .success:
+                do {
+                    try self.multiCamManager.configureSession()
+                    self.multiCamManager.onFrameCaptured = { packet in
+                        if self.isStreaming {
+                            self.streamer.sendPacket(packet)
+                        }
+                    }
+                    self.statusMessage = "Camera configured (Dual Wide + Ultra-Wide)"
+                } catch {
+                    self.statusMessage = "Config Error: \(error.localizedDescription)"
                 }
+            case .failure(let error):
+                self.statusMessage = "Camera Error: \(error.localizedDescription)"
             }
-            statusMessage = "Camera configured (Dual 1080p@30fps)"
-        } catch {
-            statusMessage = "Config Error: \(error.localizedDescription)"
         }
     }
 

@@ -20,6 +20,41 @@ public struct StereoFramePacket {
     public let metadataJSON: Data
 }
 
+public enum MultiCamSessionError: LocalizedError {
+    case multiCamNotSupported
+    case cameraPermissionDenied
+    case mainInputCreationFailed
+    case mainOutputCreationFailed
+    case mainVideoPortNotFound
+    case ultrawideInputCreationFailed
+    case ultrawideOutputCreationFailed
+    case ultrawideVideoPortNotFound
+    case hardwareCostBudgetExceeded(cost: Float)
+
+    public var errorDescription: String? {
+        switch self {
+        case .multiCamNotSupported:
+            return "Hardware multi-cam not supported on this device or when running on Xcode Simulator."
+        case .cameraPermissionDenied:
+            return "Camera access is denied or restricted in iOS Privacy Settings."
+        case .mainInputCreationFailed:
+            return "Failed to add Main camera input to capture session."
+        case .mainOutputCreationFailed:
+            return "Failed to add Main camera output to capture session."
+        case .mainVideoPortNotFound:
+            return "Failed to find Main camera video port."
+        case .ultrawideInputCreationFailed:
+            return "Failed to add Ultra-Wide camera input to capture session."
+        case .ultrawideOutputCreationFailed:
+            return "Failed to add Ultra-Wide camera output to capture session."
+        case .ultrawideVideoPortNotFound:
+            return "Failed to find Ultra-Wide camera video port."
+        case .hardwareCostBudgetExceeded(let cost):
+            return "Exceeded AVCaptureMultiCamSession hardware cost budget (hardwareCost: \(cost) > 1.0). Lower active device resolutions or framerates."
+        }
+    }
+}
+
 public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDelegate {
     private let captureSession = AVCaptureMultiCamSession()
     private var dataSynchronizer: AVCaptureDataOutputSynchronizer?
@@ -27,6 +62,9 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
     private var mainOutputRef: AVCaptureVideoDataOutput?
     private var uwOutputRef: AVCaptureVideoDataOutput?
     private let ciContext = CIContext(options: nil)
+
+    // Cached hardware bandwidth cost to prevent session lock contention on frame delivery thread
+    private var cachedHardwareBandwidthCost: Float = 0.0
 
     public var onFrameCaptured: ((StereoFramePacket) -> Void)?
 
@@ -38,79 +76,146 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
         return AVCaptureMultiCamSession.isMultiCamSupported
     }
 
+    public func checkCameraAuthorization(completion: @escaping (Result<Void, MultiCamSessionError>) -> Void) {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
+        case .authorized:
+            DispatchQueue.main.async { completion(.success(())) }
+        case .denied, .restricted:
+            DispatchQueue.main.async { completion(.failure(.cameraPermissionDenied)) }
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    if granted {
+                        completion(.success(()))
+                    } else {
+                        completion(.failure(.cameraPermissionDenied))
+                    }
+                }
+            }
+        @unknown default:
+            DispatchQueue.main.async { completion(.failure(.cameraPermissionDenied)) }
+        }
+    }
+
     public func configureSession(targetWidth: Int32 = 1920, targetHeight: Int32 = 1080) throws {
         guard AVCaptureMultiCamSession.isMultiCamSupported else {
-            throw NSError(domain: "MultiCamSession", code: 1, userInfo: [NSLocalizedDescriptionKey: "Hardware multi-cam not supported on this device."])
+            throw MultiCamSessionError.multiCamNotSupported
         }
 
-        captureSession.beginConfiguration()
-        defer { captureSession.commitConfiguration() }
-
-        let pixelFormat = Int(kCVPixelFormatType_32BGRA)
-
-        // 1. Configure Main Wide Camera
-        guard let mainDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
-              let mainInput = try? AVCaptureDeviceInput(device: mainDevice),
-              captureSession.canAddInput(mainInput) else {
-            throw NSError(domain: "MultiCamSession", code: 2, userInfo: [NSLocalizedDescriptionKey: "Failed to add Main camera input."])
-        }
-        captureSession.addInputWithNoConnections(mainInput)
-
-        try configureDeviceFormat(device: mainDevice, targetWidth: targetWidth, targetHeight: targetHeight)
-
-        let mainOutput = AVCaptureVideoDataOutput()
-        mainOutput.alwaysDiscardsLateVideoFrames = true
-        mainOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: pixelFormat]
-
-        guard captureSession.canAddOutput(mainOutput) else {
-            throw NSError(domain: "MultiCamSession", code: 3, userInfo: [NSLocalizedDescriptionKey: "Failed to add Main camera output."])
-        }
-        captureSession.addOutputWithNoConnections(mainOutput)
-        self.mainOutputRef = mainOutput
-
-        guard let mainPort = mainInput.ports.first(where: { $0.mediaType == .video }) else {
-            throw NSError(domain: "MultiCamSession", code: 6, userInfo: [NSLocalizedDescriptionKey: "Failed to find Main camera video port."])
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        guard status == .authorized else {
+            throw MultiCamSessionError.cameraPermissionDenied
         }
 
-        let mainConnection = AVCaptureConnection(inputPorts: [mainPort], output: mainOutput)
-        if mainConnection.isCameraIntrinsicMatrixDeliverySupported {
-            mainConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
-        }
-        captureSession.addConnection(mainConnection)
-
-        // 2. Configure Ultra-Wide Camera
-        guard let uwDevice = AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .back),
-              let uwInput = try? AVCaptureDeviceInput(device: uwDevice),
-              captureSession.canAddInput(uwInput) else {
-            throw NSError(domain: "MultiCamSession", code: 4, userInfo: [NSLocalizedDescriptionKey: "Failed to add Ultra-Wide camera input."])
-        }
-        captureSession.addInputWithNoConnections(uwInput)
-
-        try configureDeviceFormat(device: uwDevice, targetWidth: targetWidth, targetHeight: targetHeight)
-
-        let uwOutput = AVCaptureVideoDataOutput()
-        uwOutput.alwaysDiscardsLateVideoFrames = true
-        uwOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: pixelFormat]
-
-        guard captureSession.canAddOutput(uwOutput) else {
-            throw NSError(domain: "MultiCamSession", code: 5, userInfo: [NSLocalizedDescriptionKey: "Failed to add Ultra-Wide camera output."])
-        }
-        captureSession.addOutputWithNoConnections(uwOutput)
-        self.uwOutputRef = uwOutput
-
-        guard let uwPort = uwInput.ports.first(where: { $0.mediaType == .video }) else {
-            throw NSError(domain: "MultiCamSession", code: 7, userInfo: [NSLocalizedDescriptionKey: "Failed to find Ultra-Wide camera video port."])
+        struct Resolution {
+            let width: Int32
+            let height: Int32
         }
 
-        let uwConnection = AVCaptureConnection(inputPorts: [uwPort], output: uwOutput)
-        if uwConnection.isCameraIntrinsicMatrixDeliverySupported {
-            uwConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
-        }
-        captureSession.addConnection(uwConnection)
+        let candidateResolutions: [Resolution] = [
+            Resolution(width: targetWidth, height: targetHeight),
+            Resolution(width: 1280, height: 720),
+            Resolution(width: 640, height: 480)
+        ]
 
-        // 3. Hardware Data Output Synchronizer
-        dataSynchronizer = AVCaptureDataOutputSynchronizer(dataOutputs: [mainOutput, uwOutput])
-        dataSynchronizer?.setDelegate(self, queue: DispatchQueue(label: "com.robotics.multicam.sync", qos: .userInitiated))
+        var configuredSuccessfully = false
+        var lastCost: Float = 0.0
+
+        for res in candidateResolutions {
+            captureSession.beginConfiguration()
+
+            for input in captureSession.inputs { captureSession.removeInput(input) }
+            for output in captureSession.outputs { captureSession.removeOutput(output) }
+
+            let pixelFormat = Int(kCVPixelFormatType_32BGRA)
+
+            // 1. Configure Main Wide Camera
+            guard let mainDevice = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back),
+                  let mainInput = try? AVCaptureDeviceInput(device: mainDevice),
+                  captureSession.canAddInput(mainInput) else {
+                captureSession.commitConfiguration()
+                throw MultiCamSessionError.mainInputCreationFailed
+            }
+            captureSession.addInputWithNoConnections(mainInput)
+
+            try configureDeviceFormat(device: mainDevice, targetWidth: res.width, targetHeight: res.height)
+
+            let mainOutput = AVCaptureVideoDataOutput()
+            mainOutput.alwaysDiscardsLateVideoFrames = true
+            mainOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: pixelFormat]
+
+            guard captureSession.canAddOutput(mainOutput) else {
+                captureSession.commitConfiguration()
+                throw MultiCamSessionError.mainOutputCreationFailed
+            }
+            captureSession.addOutputWithNoConnections(mainOutput)
+            self.mainOutputRef = mainOutput
+
+            guard let mainPort = mainInput.ports.first(where: { $0.mediaType == .video }) else {
+                captureSession.commitConfiguration()
+                throw MultiCamSessionError.mainVideoPortNotFound
+            }
+
+            let mainConnection = AVCaptureConnection(inputPorts: [mainPort], output: mainOutput)
+            if mainConnection.isCameraIntrinsicMatrixDeliverySupported {
+                mainConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
+            }
+            captureSession.addConnection(mainConnection)
+
+            // 2. Configure Ultra-Wide Camera
+            guard let uwDevice = AVCaptureDevice.default(.builtInUltraWideCamera, for: .video, position: .back),
+                  let uwInput = try? AVCaptureDeviceInput(device: uwDevice),
+                  captureSession.canAddInput(uwInput) else {
+                captureSession.commitConfiguration()
+                throw MultiCamSessionError.ultrawideInputCreationFailed
+            }
+            captureSession.addInputWithNoConnections(uwInput)
+
+            try configureDeviceFormat(device: uwDevice, targetWidth: res.width, targetHeight: res.height)
+
+            let uwOutput = AVCaptureVideoDataOutput()
+            uwOutput.alwaysDiscardsLateVideoFrames = true
+            uwOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: pixelFormat]
+
+            guard captureSession.canAddOutput(uwOutput) else {
+                captureSession.commitConfiguration()
+                throw MultiCamSessionError.ultrawideOutputCreationFailed
+            }
+            captureSession.addOutputWithNoConnections(uwOutput)
+            self.uwOutputRef = uwOutput
+
+            guard let uwPort = uwInput.ports.first(where: { $0.mediaType == .video }) else {
+                captureSession.commitConfiguration()
+                throw MultiCamSessionError.ultrawideVideoPortNotFound
+            }
+
+            let uwConnection = AVCaptureConnection(inputPorts: [uwPort], output: uwOutput)
+            if uwConnection.isCameraIntrinsicMatrixDeliverySupported {
+                uwConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
+            }
+            captureSession.addConnection(uwConnection)
+
+            // 3. Hardware Data Output Synchronizer
+            dataSynchronizer = AVCaptureDataOutputSynchronizer(dataOutputs: [mainOutput, uwOutput])
+            dataSynchronizer?.setDelegate(self, queue: DispatchQueue(label: "com.robotics.multicam.sync", qos: .userInitiated))
+
+            lastCost = captureSession.hardwareCost
+            captureSession.commitConfiguration()
+
+            if captureSession.hardwareCost <= 1.0 {
+                configuredSuccessfully = true
+                self.cachedHardwareBandwidthCost = captureSession.hardwareCost
+                print("[MultiCamSessionManager] Session configured successfully at \(res.width)x\(res.height) with hardwareCost: \(captureSession.hardwareCost)")
+                break
+            } else {
+                print("[MultiCamSessionManager] Hardware cost \(captureSession.hardwareCost) > 1.0 for resolution \(res.width)x\(res.height). Retrying lower format...")
+            }
+        }
+
+        if !configuredSuccessfully {
+            throw MultiCamSessionError.hardwareCostBudgetExceeded(cost: lastCost)
+        }
     }
 
     private func configureDeviceFormat(device: AVCaptureDevice, targetWidth: Int32, targetHeight: Int32) throws {
@@ -183,6 +288,10 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
             "extrinsics_uw_to_main": [
                 "rotation_matrix_3x3": [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]],
                 "translation_vector_mm": [19.5, 0.0, 0.0]
+            ],
+            "telemetry": [
+                "hardware_bandwidth_cost": self.cachedHardwareBandwidthCost,
+                "is_multi_cam_supported": AVCaptureMultiCamSession.isMultiCamSupported
             ]
         ]
 
