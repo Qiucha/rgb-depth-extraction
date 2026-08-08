@@ -26,6 +26,7 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
     private var frameCounter: UInt64 = 0
     private var mainOutputRef: AVCaptureVideoDataOutput?
     private var uwOutputRef: AVCaptureVideoDataOutput?
+    private let ciContext = CIContext(options: nil)
 
     public var onFrameCaptured: ((StereoFramePacket) -> Void)?
 
@@ -201,9 +202,7 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
     private func sampleBufferToJPEG(_ sampleBuffer: CMSampleBuffer) -> Data? {
         guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return nil }
         let ciImage = CIImage(cvImageBuffer: imageBuffer)
-        let context = CIContext(options: [.useSoftwareRenderer: false])
-        let colorSpace = CGColorSpaceCreateDeviceRGB()
-        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent, format: .RGBA8, colorSpace: colorSpace) else { return nil }
+        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return nil }
         let uiImage = UIImage(cgImage: cgImage)
         return uiImage.jpegData(compressionQuality: 0.8)
     }

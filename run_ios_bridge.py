@@ -17,7 +17,7 @@ from src.realworld.ios_bridge.server import start_bridge_server
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="iOS Dual-Camera Real-Time Receiver Bridge Server")
     parser.add_argument("--port", type=int, default=8765, help="Port to listen for iOS WebSocket client (default: 8765)")
-    parser.add_argument("--save-dir", default="data/live_iphone_capture", help="Directory where captured live sequence frames are saved")
+    parser.add_argument("--save-dir", default="data/live_captures/iphone_capture_latest", help="Directory where captured live sequence frames are saved")
     args = parser.parse_args()
 
     print(f"=== Starting iOS Dual-Camera Bridge Server on port {args.port} ===")

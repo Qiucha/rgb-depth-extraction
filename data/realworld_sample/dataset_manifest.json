@@ -1,0 +1,139 @@
+{
+  "sequence_id": "seq_synthetic_sample_001",
+  "version": "1.0.0",
+  "created_at": "2026-08-08T16:51:00Z",
+  "devices": {
+    "iphone": {
+      "model": "iPhone 15 Pro",
+      "os_version": "iOS 17.4",
+      "nominal_baseline_mm": 19.5,
+      "main_camera": {
+        "sensor_name": "Main Wide 24mm",
+        "nominal_focal_length_mm": 6.86,
+        "nominal_fov_deg": 80.0
+      },
+      "ultrawide_camera": {
+        "sensor_name": "Ultra-Wide 13mm",
+        "nominal_focal_length_mm": 2.22,
+        "nominal_fov_deg": 120.0
+      }
+    },
+    "realsense": {
+      "model": "D435",
+      "serial_number": "12345678",
+      "firmware_version": "5.13.0",
+      "baseline_mm": 50.0,
+      "depth_units_meters": 0.001
+    }
+  },
+  "frame_count": 1,
+  "frames": [
+    {
+      "frame_index": 0,
+      "timestamp_seconds": 0.0,
+      "files": {
+        "main_rgb": "frame_000000/im0_main.png",
+        "ultrawide_rgb": "frame_000000/im1_ultrawide.png",
+        "realsense_depth_png": "frame_000000/realsense_depth.png",
+        "realsense_depth_npy": "frame_000000/realsense_depth.npy",
+        "realsense_pointcloud_ply": "frame_000000/realsense_gt.ply"
+      },
+      "iphone_calibration": {
+        "reference_dimensions": {
+          "width": 1920,
+          "height": 1080
+        },
+        "main_intrinsics": {
+          "matrix_3x3": [
+            [
+              1400.0,
+              0.0,
+              960.0
+            ],
+            [
+              0.0,
+              1400.0,
+              540.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "pixel_size_micrometers": 1.22,
+          "lens_position": 0.5
+        },
+        "ultrawide_intrinsics": {
+          "matrix_3x3": [
+            [
+              600.0,
+              0.0,
+              960.0
+            ],
+            [
+              0.0,
+              600.0,
+              540.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "pixel_size_micrometers": 1.0,
+          "lens_position": 0.0
+        },
+        "extrinsic_transform_ultrawide_to_main": {
+          "rotation_matrix_3x3": [
+            [
+              1.0,
+              0.0,
+              0.0
+            ],
+            [
+              0.0,
+              1.0,
+              0.0
+            ],
+            [
+              0.0,
+              0.0,
+              1.0
+            ]
+          ],
+          "translation_vector_mm": [
+            19.5,
+            0.0,
+            0.0
+          ]
+        }
+      },
+      "realsense_calibration": {
+        "dimensions": {
+          "width": 1920,
+          "height": 1080
+        },
+        "intrinsics_matrix_3x3": [
+          [
+            1400.0,
+            0.0,
+            960.0
+          ],
+          [
+            0.0,
+            1400.0,
+            540.0
+          ],
+          [
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        "depth_scale_meters": 0.001
+      }
+    }
+  ]
+}

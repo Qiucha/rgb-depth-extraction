@@ -9,3 +9,9 @@ __pycache__/
 *.egg-info/
 .scratch/
 digest/assets/
+digest_test_*/
+digest_live_*/
+data/test_*/
+data/live_captures/*
+!data/live_captures/.gitkeep
+

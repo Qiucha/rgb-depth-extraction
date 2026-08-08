@@ -266,7 +266,7 @@ class IOSBridgeServer:
             await asyncio.Future()
 
 
-def start_bridge_server(port: int = 8765, save_dir: str = "data/live_iphone_capture"):
+def start_bridge_server(port: int = 8765, save_dir: str = "data/live_captures/iphone_capture_latest"):
     """Helper CLI entry point to run server."""
     server = IOSBridgeServer(port=port, save_dir=save_dir)
     asyncio.run(server.start())
@@ -276,7 +276,7 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="iOS Dual-Camera Real-Time Receiver Bridge Server")
     parser.add_argument("--port", type=int, default=8765, help="Port to listen for iOS WebSocket client (default: 8765)")
-    parser.add_argument("--save-dir", default="data/live_iphone_capture", help="Directory where captured live sequence frames are saved")
+    parser.add_argument("--save-dir", default="data/live_captures/iphone_capture_latest", help="Directory where captured live sequence frames are saved")
     args = parser.parse_args()
 
     start_bridge_server(port=args.port, save_dir=args.save_dir)
