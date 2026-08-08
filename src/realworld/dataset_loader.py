@@ -48,9 +48,14 @@ class RealWorldDatasetLoader:
             T = np.array(ext["translation_vector_mm"], dtype=np.float64)
 
             rs_depth = None
-            rs_depth_path = os.path.join(self.sequence_dir, files.get("realsense_depth_npy", ""))
-            if os.path.exists(rs_depth_path):
-                rs_depth = np.load(rs_depth_path)
+            rs_depth_rel = files.get("realsense_depth_npy", "")
+            if rs_depth_rel:
+                rs_depth_path = os.path.join(self.sequence_dir, rs_depth_rel)
+                if os.path.isfile(rs_depth_path):
+                    rs_depth = np.load(rs_depth_path)
+
+            rs_ply_rel = files.get("realsense_pointcloud_ply", "")
+            rs_ply_path = os.path.join(self.sequence_dir, rs_ply_rel) if rs_ply_rel else ""
 
             return {
                 "img_main": img_main,
@@ -62,7 +67,7 @@ class RealWorldDatasetLoader:
                 "R": R,
                 "T": T,
                 "realsense_depth": rs_depth,
-                "realsense_ply_path": os.path.join(self.sequence_dir, files.get("realsense_pointcloud_ply", ""))
+                "realsense_ply_path": rs_ply_path
             }
         else:
             raise FileNotFoundError(f"dataset_manifest.json not found in {self.sequence_dir}")

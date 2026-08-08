@@ -74,6 +74,30 @@ class TestRealWorldPipeline(unittest.TestCase):
         self.assertIn("evaluation_metrics", results)
         self.assertTrue(os.path.exists("digest_test_realworld_deep/realworld_summary.json"))
 
+    def test_load_frame_without_realsense_depth(self):
+        from src.realworld.dataset_generator import generate_synthetic_realworld_dataset
+        from src.realworld.dataset_loader import RealWorldDatasetLoader
+        import json
+        import os
+
+        seq_dir = generate_synthetic_realworld_dataset("data/test_realworld_seq")
+        manifest_path = os.path.join(seq_dir, "dataset_manifest.json")
+        with open(manifest_path, "r") as f:
+            manifest = json.load(f)
+
+        # Remove optional realsense entries from files dictionary
+        for frame in manifest["frames"]:
+            frame["files"].pop("realsense_depth_npy", None)
+            frame["files"].pop("realsense_pointcloud_ply", None)
+
+        with open(manifest_path, "w") as f:
+            json.dump(manifest, f, indent=2)
+
+        loader = RealWorldDatasetLoader(seq_dir)
+        frame_data = loader.load_frame(0)
+        self.assertIsNone(frame_data["realsense_depth"])
+        self.assertEqual(frame_data["realsense_ply_path"], "")
+
 
 if __name__ == '__main__':
     unittest.main()
