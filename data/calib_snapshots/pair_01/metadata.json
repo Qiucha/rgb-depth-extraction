@@ -1,0 +1,44 @@
+{
+  "frame_id": 183,
+  "timestamp_pts_ns": 16515679679707,
+  "main": {
+    "fy": 1400,
+    "cy": 0,
+    "fx": 1400,
+    "cx": 0
+  },
+  "ultrawide": {
+    "fy": 600,
+    "cy": 0,
+    "fx": 600,
+    "cx": 0
+  },
+  "extrinsics_uw_to_main": {
+    "translation_vector_mm": [
+      19.5,
+      0,
+      0
+    ],
+    "rotation_matrix_3x3": [
+      [
+        1,
+        0,
+        0
+      ],
+      [
+        0,
+        1,
+        0
+      ],
+      [
+        0,
+        0,
+        1
+      ]
+    ]
+  },
+  "telemetry": {
+    "is_multi_cam_supported": true,
+    "hardware_bandwidth_cost": 0.5
+  }
+}

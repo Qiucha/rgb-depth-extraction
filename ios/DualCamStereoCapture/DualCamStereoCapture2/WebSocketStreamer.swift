@@ -7,59 +7,120 @@
 
 import Foundation
 
-public class WebSocketStreamer {
+public enum WebSocketConnectionState {
+    case disconnected
+    case connecting
+    case connected
+    case failed
+}
+
+public class WebSocketStreamer: NSObject, URLSessionWebSocketDelegate {
     private var webSocketTask: URLSessionWebSocketTask?
-    private var isConnected = false
+    private var urlSession: URLSession?
+    public private(set) var state: WebSocketConnectionState = .disconnected
     private var isSending = false
 
     public var onError: ((String) -> Void)?
     public var onConnect: (() -> Void)?
     public var onDisconnect: (() -> Void)?
 
-    public init() {}
+    public override init() {
+        super.init()
+    }
 
     public func connect(url: URL) {
+        disconnect()
+
         let config = URLSessionConfiguration.default
         config.timeoutIntervalForRequest = 10.0
         config.waitsForConnectivity = true
-        let session = URLSession(configuration: config)
+        
+        let session = URLSession(configuration: config, delegate: self, delegateQueue: OperationQueue.main)
+        self.urlSession = session
 
-        webSocketTask = session.webSocketTask(with: url)
-        webSocketTask?.resume()
-        isConnected = true
+        let task = session.webSocketTask(with: url)
+        task.maximumMessageSize = 32 * 1024 * 1024
+        webSocketTask = task
+        state = .connecting
         isSending = false
         print("[WebSocketStreamer] Connecting to \(url)...")
-        listenForMessages()
+        task.resume()
     }
 
     public func disconnect() {
         webSocketTask?.cancel(with: .normalClosure, reason: nil)
-        isConnected = false
+        webSocketTask = nil
+        urlSession?.invalidateAndCancel()
+        urlSession = nil
+        let wasConnected = (state == .connected)
+        state = .disconnected
         isSending = false
-        onDisconnect?()
+        if wasConnected {
+            onDisconnect?()
+        }
         print("[WebSocketStreamer] Disconnected")
+    }
+
+    // MARK: - URLSessionWebSocketDelegate
+    public func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        print("[WebSocketStreamer] WebSocket connected successfully (protocol: \(String(describing: `protocol`)))")
+        state = .connected
+        listenForMessages()
+        DispatchQueue.main.async {
+            self.onConnect?()
+        }
+    }
+
+    public func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error {
+            print("[WebSocketStreamer] Session completed with error: \(error.localizedDescription)")
+            let wasConnectingOrConnected = (state == .connecting || state == .connected)
+            state = .failed
+            if wasConnectingOrConnected {
+                DispatchQueue.main.async {
+                    self.onError?("Connection Error: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     private func listenForMessages() {
         webSocketTask?.receive { [weak self] result in
-            guard let self = self, self.isConnected else { return }
+            guard let self = self, self.state == .connected else { return }
             switch result {
             case .failure(let error):
-                print("[WebSocketStreamer] WebSocket Error: \(error.localizedDescription)")
-                self.isConnected = false
-                self.onError?("Network Error: \(error.localizedDescription)")
+                print("[WebSocketStreamer] WebSocket Receive Error: \(error.localizedDescription)")
+                if self.state == .connected {
+                    self.state = .failed
+                    DispatchQueue.main.async {
+                        self.onError?("Network Error: \(error.localizedDescription)")
+                    }
+                }
             case .success(let message):
-                print("[WebSocketStreamer] Received message: \(message)")
+                print("[WebSocketStreamer] Received server message: \(message)")
                 self.listenForMessages()
             }
         }
     }
 
+    private var lastSendTime = Date()
+
     public func sendPacket(_ packet: StereoFramePacket) {
-        guard isConnected, let task = webSocketTask else { return }
-        if isSending { return } // Skip frame if previous send is in-flight to prevent buffer congestion
+        guard state == .connected, let task = webSocketTask else {
+            // If still connecting or disconnected, gracefully ignore packet without error
+            return
+        }
+
+        if isSending {
+            if Date().timeIntervalSince(lastSendTime) > 0.5 {
+                isSending = false
+            } else {
+                return // Skip frame if previous send is in-flight to prevent buffer congestion
+            }
+        }
 
         isSending = true
+        lastSendTime = Date()
 
         // Construct 36-byte Header (ROBO, version=1, flags=0, frameID, pts, metaLen, mainLen, uwLen)
         var data = Data()
@@ -105,7 +166,7 @@ public class WebSocketStreamer {
             self?.isSending = false
             if let error = error {
                 print("[WebSocketStreamer] Error sending binary packet: \(error)")
-                self?.isConnected = false
+                self?.state = .failed
                 DispatchQueue.main.async {
                     self?.onError?("Send Error: \(error.localizedDescription)")
                 }

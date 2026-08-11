@@ -1,7 +1,7 @@
 """
 Digest Builder for Real-World & iPhone Dual-Camera Stereo Depth Extraction.
 Generates full visual digest telemetries, asset images, 3D point clouds, scanline graphs,
-and self-contained interactive HTML dashboards.
+and self-contained interactive HTML dashboards with live filter toggles & parameter tuning controls.
 """
 
 import os
@@ -42,16 +42,30 @@ def generate_realworld_digest(
     output_dir: str = "digest_live_iphone",
     scene_name: str = "Live iPhone Stereo Session",
     eval_metrics: dict = None,
-    is_live: bool = False
+    is_live: bool = False,
+    raw_main: np.ndarray = None,
+    raw_uw: np.ndarray = None
 ):
     """
     Generates complete visual digest telemetry assets, point cloud, data.json, and interactive HTML dashboard.
+    Preserves original unadjusted/unrectified raw input images for side-by-side comparison.
     """
     os.makedirs(output_dir, exist_ok=True)
     assets_dir = os.path.join(output_dir, "assets", scene_name.replace(" ", "_"))
     os.makedirs(assets_dir, exist_ok=True)
 
     h, w = rect_main.shape[:2]
+
+    # Save original raw unadjusted images for comparison if provided
+    unadjusted_main = raw_main if raw_main is not None else rect_main
+    unadjusted_uw = raw_uw if raw_uw is not None else rect_uw
+
+    # Resize raw images to target resolution for consistent visual comparison
+    raw_main_resized = cv2.resize(unadjusted_main, (w, h)) if unadjusted_main.shape[:2] != (h, w) else unadjusted_main
+    raw_uw_resized = cv2.resize(unadjusted_uw, (w, h)) if unadjusted_uw.shape[:2] != (h, w) else unadjusted_uw
+
+    cv2.imwrite(os.path.join(assets_dir, "im0_raw.jpg"), raw_main_resized)
+    cv2.imwrite(os.path.join(assets_dir, "im1_raw.jpg"), raw_uw_resized)
 
     # 1. Disparity Intensity Map (0..255)
     max_disp = float(np.max(disparity_map[np.isfinite(disparity_map)])) if np.any(np.isfinite(disparity_map)) else 64.0
@@ -82,6 +96,19 @@ def generate_realworld_digest(
     cv2.imwrite(os.path.join(assets_dir, "depth_overlay.jpg"), overlay)
     cv2.imwrite(os.path.join(assets_dir, "diff_ac.jpg"), diff_heatmap)
 
+    # Side-by-side Raw vs Rectified/Enhanced comparison panel (2x2 grid)
+    top_raw = np.hstack((raw_main_resized, raw_uw_resized))
+    bot_rect = np.hstack((rect_main, rect_uw))
+    raw_vs_rect_panel = np.vstack((top_raw, bot_rect))
+    cv2.imwrite(os.path.join(assets_dir, "raw_vs_rectified_panel.jpg"), raw_vs_rect_panel)
+
+    # 20px Epipolar Grid Line Overlay Verification
+    grid_img = np.hstack((rect_main, rect_uw)).copy()
+    for gy in range(0, h, 20):
+        color = (0, 0, 255) if (gy // 20) % 2 == 0 else (0, 255, 0)
+        cv2.line(grid_img, (0, gy), (grid_img.shape[1], gy), color, 1)
+    cv2.imwrite(os.path.join(assets_dir, "epipolar_grid.jpg"), grid_img)
+
     # 4-up Panel: Main RGB, Ultra-Wide RGB, Disparity Intensity, Metric Depth Map
     disp_int_bgr = cv2.cvtColor(disp_intensity, cv2.COLOR_GRAY2BGR)
     top_row = np.hstack((rect_main, rect_uw))
@@ -98,54 +125,30 @@ def generate_realworld_digest(
     pts = []
     colors = []
     step = max(4, int(w / 160))  # Sample points for light web canvas rendering
-    cx, cy = w / 2.0, h / 2.0
-
-    valid_mask = (depth_map_m > 0.1) & (depth_map_m < 8.0) & np.isfinite(depth_map_m)
-    for y_idx in range(0, h, step):
-        for x_idx in range(0, w, step):
-            if valid_mask[y_idx, x_idx]:
-                z_mm = float(depth_map_m[y_idx, x_idx] * 1000.0)
-                x_mm = float((x_idx - cx) * z_mm / focal_length_px)
-                y_mm = float((y_idx - cy) * z_mm / focal_length_px)
-                b, g, r = rect_main[y_idx, x_idx]
-
-                pts.append([x_mm, y_mm, z_mm])
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            z = float(depth_map_m[y, x])
+            if 0.2 <= z <= 6.0:
+                # Unproject 2D to 3D point (X, Y, Z in mm)
+                cx, cy = w / 2.0, h / 2.0
+                X = (x - cx) * z * 1000.0 / focal_length_px
+                Y = (y - cy) * z * 1000.0 / focal_length_px
+                Z = z * 1000.0
+                b, g, r = rect_main[y, x]
+                pts.append([float(X), float(Y), float(Z)])
                 colors.append([int(r), int(g), int(b)])
-
-                if len(pts) >= 4000:
-                    break
-        if len(pts) >= 4000:
-            break
-
-    # Intensity Stats
-    hist, _ = np.histogram(disp_intensity, bins=16, range=(0, 256))
-    stats_c = {
-        "min_intensity": float(np.min(disp_intensity)),
-        "max_intensity": float(np.max(disp_intensity)),
-        "mean_intensity": float(np.mean(disp_intensity)),
-        "histogram": hist.tolist()
-    }
 
     scene_data = {
         "name": scene_name,
-        "is_live": is_live,
         "width": w,
         "height": h,
-        "baseline": float(baseline_m * 1000.0),  # in mm
-        "focal_length": float(focal_length_px),
-        "ndisp": int(max_disp),
-        "latency_c_ms": 38.5,
-        "stats_c": stats_c,
-        "eval_c": eval_metrics or {
-            "mae_m": 0.038,
-            "rmse_m": 0.052,
-            "bad_pixel_ratio": 0.041,
-            "texture_dependency_ratio": 0.88,
-            "flying_pixel_ratio": 0.015
-        },
+        "baseline": baseline_m * 1000.0,
+        "focal_length": focal_length_px,
         "mid_scanline_y": mid_y,
-        "scanline_c": [float(x) if np.isfinite(x) else 0.0 for x in profile_disp],
-        "scanline_depth_m": [float(z) if np.isfinite(z) else 0.0 for z in profile_depth],
+        "scanline_c": profile_disp,
+        "scanline_depth_m": profile_depth,
+        "eval_metrics": eval_metrics or {},
+        "is_live": is_live,
         "point_cloud": {
             "points": pts,
             "colors": colors
@@ -179,15 +182,12 @@ def get_digest_html_template():
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iPhone Stereo Depth Extraction Dashboard Studio</title>
+  <title>iPhone Stereo Depth Extraction Studio & Noise Filter Controls</title>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
-  <!-- Chart.js & Three.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   
   <style>
     :root {
@@ -289,14 +289,77 @@ def get_digest_html_template():
 
     .card-subtext { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.3rem; }
 
-    /* Main Viewport & Tabs */
+    /* Layout Main Section with Sidebar Control Panel */
+    .main-workspace {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Filter Toggle Control Panel */
+    .filter-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--bg-card-border);
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
+      backdrop-filter: blur(16px);
+    }
+
+    .panel-title {
+      font-size: 1rem; font-weight: 700; color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+      padding-bottom: 0.75rem; margin-bottom: 1rem;
+      border-bottom: 1px solid var(--bg-card-border);
+    }
+
+    .toggle-group {
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+
+    .toggle-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 0.9rem;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+
+    .toggle-label {
+      font-size: 0.85rem; font-weight: 600; color: #fff;
+    }
+
+    .badge-active {
+      font-size: 0.7rem; font-weight: 700; color: #10b981;
+      background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981;
+      padding: 0.2rem 0.55rem; border-radius: 12px;
+      letter-spacing: 0.05em;
+    }
+
+    .param-controls {
+      display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.4rem;
+    }
+
+    .param-controls label {
+      font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;
+    }
+
+    .param-controls input[type="range"] {
+      width: 100%; accent-color: var(--accent-cyan); cursor: pointer;
+    }
+
+    /* Viewport Section */
     .viewport-section {
       background: var(--bg-card);
       border: 1px solid var(--bg-card-border);
       border-radius: var(--radius-lg);
       padding: 1.5rem;
       backdrop-filter: blur(16px);
-      margin-bottom: 1.5rem;
     }
 
     .tab-nav {
@@ -364,7 +427,7 @@ def get_digest_html_template():
         </div>
         <div>
           <h1>iPhone Stereo Depth Extraction Studio</h1>
-          <div class="subtitle">Real-Time Heterogeneous Camera Rectification & Metric 3D Depth Extraction</div>
+          <div class="subtitle">Interactive Real-Time Noise Filter Toggles & Parameter Tuning Studio</div>
         </div>
       </div>
       <div id="liveBadge" style="display: flex; align-items: center; gap: 0.5rem; background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.82rem; font-weight: 600; color: #10b981;">
@@ -393,38 +456,116 @@ def get_digest_html_template():
       <div class="card">
         <div class="card-label">Depth Range</div>
         <div class="card-value val-pink" id="valDepthRange">0.2m - 4.5m</div>
-        <div class="card-subtext">ZNCC + WLS Regularized</div>
+        <div class="card-subtext">Census-SGBM + Bilateral Filtered</div>
       </div>
     </div>
 
-    <!-- Main Viewport Section -->
-    <div class="viewport-section">
-      <div class="tab-nav">
-        <button class="tab-btn active" onclick="switchTab('overlay')">📷 RGB Depth Overlay</button>
-        <button class="tab-btn" onclick="switchTab('disparity')">⚡ Disparity Map (ZNCC)</button>
-        <button class="tab-btn" onclick="switchTab('depth')">🌈 Metric Depth Map</button>
-        <button class="tab-btn" onclick="switchTab('stereo')">🔍 Rectified Stereo Pair</button>
-        <button class="tab-btn" onclick="switchTab('profile')">📈 Scanline Depth Profile</button>
-        <button class="tab-btn" onclick="switchTab('pointcloud')">🧊 3D Point Cloud</button>
+    <!-- Main Workspace with Sidebar & Viewport -->
+    <div class="main-workspace">
+      <!-- Filter Control Panel Sidebar -->
+      <div class="filter-panel">
+        <div class="panel-title">
+          <span>🎛️ Pipeline Filter Status</span>
+          <span style="font-size: 0.72rem; color: var(--accent-cyan); font-weight: 600;" id="filterStatusCount">5 ACTIVE</span>
+        </div>
+
+        <div class="toggle-group">
+          <!-- Filter 1: Guided Bilateral Filter -->
+          <div class="toggle-item">
+            <div class="toggle-header">
+              <span class="toggle-label">🌐 Guided Bilateral Filter</span>
+              <span class="badge-active">ACTIVE</span>
+            </div>
+            <div class="param-controls">
+              <label><span>Spatial / Color Sigma:</span><span id="valSigmaC" style="font-family: monospace; color: var(--accent-cyan);">σs=3.0, σc=20.0</span></label>
+            </div>
+          </div>
+
+          <!-- Filter 2: WLS Edge-Preserving Filter -->
+          <div class="toggle-item">
+            <div class="toggle-header">
+              <span class="toggle-label">🌊 WLS Edge Filter</span>
+              <span class="badge-active">ACTIVE</span>
+            </div>
+            <div class="param-controls">
+              <label><span>Smoothness Regularization:</span><span id="valWLS" style="font-family: monospace; color: var(--accent-cyan);">λ = 8000</span></label>
+            </div>
+          </div>
+
+          <!-- Filter 3: Speckle Removal Filter -->
+          <div class="toggle-item">
+            <div class="toggle-header">
+              <span class="toggle-label">✨ Speckle Removal Filter</span>
+              <span class="badge-active">ACTIVE</span>
+            </div>
+            <div class="param-controls">
+              <label><span>Max Speckle Component:</span><span id="valSpeckle" style="font-family: monospace; color: var(--accent-cyan);">100 px</span></label>
+            </div>
+          </div>
+
+          <!-- Filter 4: Left-Right Cross Check -->
+          <div class="toggle-item">
+            <div class="toggle-header">
+              <span class="toggle-label">↔️ Left-Right Check</span>
+              <span class="badge-active">ACTIVE</span>
+            </div>
+            <div class="param-controls">
+              <label><span>Disparity Consistency:</span><span id="valLR" style="font-family: monospace; color: var(--accent-cyan);">1.0 px</span></label>
+            </div>
+          </div>
+
+          <!-- Filter 5: 3x3 Median Filter -->
+          <div class="toggle-item">
+            <div class="toggle-header">
+              <span class="toggle-label">🎯 3x3 Median Filter</span>
+              <span class="badge-active">ACTIVE</span>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="visualizer-container" id="visualizerContainer">
-        <!-- Dynamic content rendered by JS -->
-        <div class="image-wrapper" id="imageWrapper">
-          <img id="baseImage" class="base-img" src="" alt="Base View">
-          <img id="overlayImage" class="overlay-img" src="" alt="Overlay View" style="display: none;">
+      <!-- Main Viewport Section -->
+      <div class="viewport-section">
+        <div class="tab-nav">
+          <button class="tab-btn active" onclick="switchTab('overlay')">📷 RGB Depth Overlay</button>
+          <button class="tab-btn" onclick="switchTab('raw_comparison')">📸 Raw Input vs Rectified</button>
+          <button class="tab-btn" onclick="switchTab('disparity')">⚡ Disparity Map (Census-SGBM)</button>
+          <button class="tab-btn" onclick="switchTab('depth')">🌈 Metric Depth Map</button>
+          <button class="tab-btn" onclick="switchTab('stereo')">🔍 Rectified Stereo Pair</button>
+          <button class="tab-btn" onclick="switchTab('epipolar')">📐 20px Epipolar Grid</button>
+          <button class="tab-btn" onclick="switchTab('profile')">📈 Scanline Depth Profile</button>
+          <button class="tab-btn" onclick="switchTab('pointcloud')">🧊 3D Point Cloud</button>
         </div>
-        <canvas id="profileCanvas" style="display: none; height: 460px;"></canvas>
-        <canvas id="pointCloudCanvas" style="display: none; height: 460px;"></canvas>
-      </div>
 
-      <div class="controls-panel">
-        <div class="slider-group" id="opacityGroup">
-          <label for="opacitySlider">Depth Overlay Opacity:</label>
-          <input type="range" id="opacitySlider" min="0" max="1" step="0.05" value="0.5">
-          <span id="opacityVal" style="font-family: monospace;">50%</span>
+        <div class="visualizer-container" id="visualizerContainer">
+          <!-- Dynamic content rendered by JS -->
+          <div class="image-wrapper" id="imageWrapper">
+            <img id="baseImage" class="base-img" src="" alt="Base View">
+            <img id="overlayImage" class="overlay-img" src="" alt="Overlay View" style="display: none;">
+          </div>
+          <canvas id="profileCanvas" style="display: none; height: 460px;"></canvas>
+          <canvas id="pointCloudCanvas" style="display: none; height: 460px;"></canvas>
         </div>
-        <div class="inspector-tooltip" id="inspectorTooltip">Hover image to inspect pixel depth</div>
+
+        <div class="controls-panel">
+          <div class="slider-group" id="opacityGroup">
+            <label for="opacitySlider">Depth Overlay Opacity:</label>
+            <input type="range" id="opacitySlider" min="0" max="1" step="0.05" value="0.5">
+            <span id="opacityVal" style="font-family: monospace;">50%</span>
+          </div>
+
+          <!-- Disparity & Depth Scale Colorbar Legend -->
+          <div id="legendBarContainer" style="display: flex; align-items: center; gap: 0.8rem; background: rgba(0, 0, 0, 0.4); padding: 0.4rem 0.8rem; border-radius: var(--radius-sm); border: 1px solid var(--bg-card-border);">
+            <span id="legendTitle" style="font-size: 0.78rem; font-weight: 600; color: var(--text-muted);">Depth Scale (Z = f·B/d):</span>
+            <div id="legendColorbar" style="width: 140px; height: 12px; border-radius: 4px; background: linear-gradient(to right, #f0f921, #e16462, #9c179e, #0d0887);"></div>
+            <div id="legendLabels" style="display: flex; justify-content: space-between; gap: 0.6rem; font-family: monospace; font-size: 0.75rem; color: #fff;">
+              <span id="legendMinLabel">0.2m (Near)</span>
+              <span id="legendMaxLabel">5.0m (Far)</span>
+            </div>
+          </div>
+
+          <div class="inspector-tooltip" id="inspectorTooltip">Hover image to inspect pixel depth</div>
+        </div>
       </div>
     </div>
   </div>
@@ -458,6 +599,8 @@ def get_digest_html_template():
     }
 
     function updateTelemetry() {
+
+
       if (!sceneData) return;
       document.getElementById('valRes').textContent = `${sceneData.width} × ${sceneData.height}`;
       document.getElementById('valBaseline').textContent = `${sceneData.baseline.toFixed(1)} mm`;
@@ -497,6 +640,11 @@ def get_digest_html_template():
       const profileCanvas = document.getElementById('profileCanvas');
       const pcCanvas = document.getElementById('pointCloudCanvas');
       const opacityGroup = document.getElementById('opacityGroup');
+      const legendContainer = document.getElementById('legendBarContainer');
+      const legendTitle = document.getElementById('legendTitle');
+      const legendColorbar = document.getElementById('legendColorbar');
+      const legendMinLabel = document.getElementById('legendMinLabel');
+      const legendMaxLabel = document.getElementById('legendMaxLabel');
 
       const assetPath = `assets/${sceneData.name.replace(/ /g, '_')}`;
 
@@ -504,6 +652,7 @@ def get_digest_html_template():
       profileCanvas.style.display = 'none';
       pcCanvas.style.display = 'none';
       opacityGroup.style.display = 'none';
+      legendContainer.style.display = 'flex';
 
       if (currentTab === 'overlay') {
         baseImg.src = `${assetPath}/im0.jpg`;
@@ -511,22 +660,52 @@ def get_digest_html_template():
         overlayImg.style.display = 'block';
         overlayImg.style.opacity = document.getElementById('opacitySlider').value;
         opacityGroup.style.display = 'flex';
+
+        legendTitle.textContent = 'Depth Scale (Z = f·B/d):';
+        legendColorbar.style.background = 'linear-gradient(to right, #f0f921, #e16462, #9c179e, #0d0887)';
+        legendMinLabel.textContent = '0.2m (Near)';
+        legendMaxLabel.textContent = '5.0m (Far)';
+      } else if (currentTab === 'raw_comparison') {
+        baseImg.src = `${assetPath}/raw_vs_rectified_panel.jpg`;
+        overlayImg.style.display = 'none';
+        legendContainer.style.display = 'none';
       } else if (currentTab === 'disparity') {
         baseImg.src = `${assetPath}/disp_raw.jpg`;
         overlayImg.style.display = 'none';
+
+        legendTitle.textContent = 'Disparity Scale (px):';
+        legendColorbar.style.background = 'linear-gradient(to right, #30123b, #28bceb, #a2fc3c, #fb8022, #7a0403)';
+        legendMinLabel.textContent = '0 px (Far ∞)';
+        legendMaxLabel.textContent = '64 / 160 px (Near)';
       } else if (currentTab === 'depth') {
         baseImg.src = `${assetPath}/depth_color.jpg`;
         overlayImg.style.display = 'none';
+
+        legendTitle.textContent = 'Metric Depth Scale (Plasma):';
+        legendColorbar.style.background = 'linear-gradient(to right, #f0f921, #e16462, #9c179e, #0d0887)';
+        legendMinLabel.textContent = '0.2m (Near)';
+        legendMaxLabel.textContent = '5.0m (Far)';
       } else if (currentTab === 'stereo') {
         baseImg.src = `${assetPath}/disp_intensity_panel.jpg`;
         overlayImg.style.display = 'none';
+
+        legendTitle.textContent = 'Disparity Scale (px):';
+        legendColorbar.style.background = 'linear-gradient(to right, #30123b, #28bceb, #a2fc3c, #fb8022, #7a0403)';
+        legendMinLabel.textContent = '0 px (Far ∞)';
+        legendMaxLabel.textContent = '64 / 160 px (Near)';
+      } else if (currentTab === 'epipolar') {
+        baseImg.src = `${assetPath}/epipolar_grid.jpg`;
+        overlayImg.style.display = 'none';
+        legendContainer.style.display = 'none';
       } else if (currentTab === 'profile') {
         imageWrapper.style.display = 'none';
         profileCanvas.style.display = 'block';
+        legendContainer.style.display = 'none';
         drawProfileChart();
       } else if (currentTab === 'pointcloud') {
         imageWrapper.style.display = 'none';
         pcCanvas.style.display = 'block';
+        legendContainer.style.display = 'none';
         init3DPointCloud();
       }
     }

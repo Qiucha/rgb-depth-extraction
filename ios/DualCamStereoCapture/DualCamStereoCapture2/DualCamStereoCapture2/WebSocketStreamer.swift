@@ -24,7 +24,9 @@ public class WebSocketStreamer {
         config.waitsForConnectivity = true
         let session = URLSession(configuration: config)
 
-        webSocketTask = session.webSocketTask(with: url)
+        let task = session.webSocketTask(with: url)
+        task.maximumMessageSize = 32 * 1024 * 1024
+        webSocketTask = task
         webSocketTask?.resume()
         isConnected = true
         isSending = false
@@ -55,11 +57,20 @@ public class WebSocketStreamer {
         }
     }
 
+    private var lastSendTime = Date()
+
     public func sendPacket(_ packet: StereoFramePacket) {
         guard isConnected, let task = webSocketTask else { return }
-        if isSending { return } // Skip frame if previous send is in-flight to prevent buffer congestion
+        if isSending {
+            if Date().timeIntervalSince(lastSendTime) > 0.5 {
+                isSending = false
+            } else {
+                return // Skip frame if previous send is in-flight to prevent buffer congestion
+            }
+        }
 
         isSending = true
+        lastSendTime = Date()
 
         // Construct 36-byte Header (ROBO, version=1, flags=0, frameID, pts, metaLen, mainLen, uwLen)
         var data = Data()

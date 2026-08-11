@@ -8,8 +8,8 @@ import os
 import sys
 import argparse
 
-# Ensure project root is in python path
-sys.path.insert(0, os.path.abspath('.'))
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(line_buffering=True)
 
 from src.realworld.ios_bridge.server import start_bridge_server
 

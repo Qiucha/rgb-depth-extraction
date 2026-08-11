@@ -73,8 +73,24 @@ class BinaryPacketDecoder:
             [0.0, 0.0, 1.0]
         ], dtype=np.float64)
 
-        R = np.array(metadata["extrinsics_uw_to_main"]["rotation_matrix_3x3"], dtype=np.float64)
-        T = np.array(metadata["extrinsics_uw_to_main"]["translation_vector_mm"], dtype=np.float64)
+        main_to_ultrawide = metadata.get("main_to_ultrawide_transform")
+        if main_to_ultrawide is not None:
+            main_to_ultrawide_rotation = np.array(
+                main_to_ultrawide["rotation_matrix_3x3"], dtype=np.float64
+            )
+            main_to_ultrawide_translation_m = np.array(
+                main_to_ultrawide["translation_vector_m"], dtype=np.float64
+            )
+            R = main_to_ultrawide_rotation.T
+            T = -R @ main_to_ultrawide_translation_m.reshape(3)
+        else:
+            legacy_transform = metadata["extrinsics_uw_to_main"]
+            R = np.array(
+                legacy_transform["rotation_matrix_3x3"], dtype=np.float64
+            )
+            T = np.array(
+                legacy_transform["translation_vector_mm"], dtype=np.float64
+            )
 
         telemetry = metadata.get("telemetry", {})
 
@@ -108,12 +124,42 @@ class IOSBridgeServer:
     def _process_and_generate_live_digest(self, frame_data: Dict[str, Any], out_dir: str):
         """Runs stereo rectification, block matching, and live digest HTML update off the main event loop."""
         try:
+            R_use = frame_data["R"]
+            T_use = frame_data["T"]
+            K_main = frame_data["K_main"]
+            K_uw = frame_data["K_uw"]
+            D_main = np.zeros(5)
+            D_uw = np.zeros(5)
+
+            for cand in ["calibration_refined.json", "data/calibration_refined.json", "calib_refined.json"]:
+                if os.path.exists(cand):
+                    try:
+                        with open(cand, "r") as f:
+                            cdata = json.load(f)
+                        calib_dict = cdata.get("iphone_calibration", cdata)
+                        if "R" in calib_dict:
+                            R_raw = np.array(calib_dict["R"], dtype=np.float64)
+                            R_use = cv2.Rodrigues(R_raw)[0] if (R_raw.shape == (3, 1) or R_raw.shape == (1, 3)) else R_raw
+                        if "T" in calib_dict:
+                            T_use = np.array(calib_dict["T"], dtype=np.float64).flatten()
+                        if "K1" in calib_dict:
+                            K_main = np.array(calib_dict["K1"], dtype=np.float64)
+                        if "K2" in calib_dict:
+                            K_uw = np.array(calib_dict["K2"], dtype=np.float64)
+                        if "D1" in calib_dict:
+                            D_main = np.array(calib_dict["D1"], dtype=np.float64)
+                        if "D2" in calib_dict:
+                            D_uw = np.array(calib_dict["D2"], dtype=np.float64)
+                        break
+                    except Exception:
+                        pass
+
             rectifier = HeterogeneousStereoRectifier(target_size=(640, 480))
             rect_main, rect_uw, P1, P2, Q = rectifier.rectify_pair(
                 img_main=frame_data["img_main"], img_uw=frame_data["img_uw"],
-                K1=frame_data["K1"], D1=np.zeros(5),
-                K2=frame_data["K2"], D2=np.zeros(5),
-                R=frame_data["R"], T=frame_data["T"]
+                K1=K_main, D1=D_main,
+                K2=K_uw, D2=D_uw,
+                R=R_use, T=T_use
             )
             gray_main = cv2.cvtColor(rect_main, cv2.COLOR_BGR2GRAY) if rect_main.ndim == 3 else rect_main
             gray_uw = cv2.cvtColor(rect_uw, cv2.COLOR_BGR2GRAY) if rect_uw.ndim == 3 else rect_uw
@@ -235,7 +281,14 @@ class IOSBridgeServer:
         try:
             async for message in websocket:
                 if isinstance(message, bytes):
-                    frame_data = BinaryPacketDecoder.decode(message)
+                    try:
+                        frame_data = BinaryPacketDecoder.decode(message)
+                    except Exception as decode_err:
+                        print(f"[IOSBridgeServer] Packet decoding error (payload size: {len(message)} bytes): {decode_err}")
+                        import traceback
+                        traceback.print_exc()
+                        continue
+
                     self.frame_count += 1
                     self.save_frame_to_dataset(frame_data)
 
@@ -250,15 +303,22 @@ class IOSBridgeServer:
 
                     elapsed = time.time() - self.start_time
                     fps = self.frame_count / elapsed if elapsed > 0 else 0
-                    if self.frame_count % 30 == 0:
+                    if self.frame_count % 30 == 0 or self.frame_count == 1:
                         print(f"[IOSBridgeServer] Streamed Frame #{frame_data['frame_id']} | FPS: {fps:.1f} | Hardware Bandwidth Cost: {hw_cost:.2f}")
 
                     # Real-Time Inspection: update depth extraction asynchronously every 15 frames (and on frame 1)
                     if self.frame_count % 15 == 0 or self.frame_count == 1:
                         asyncio.create_task(asyncio.to_thread(self._process_and_generate_live_digest, frame_data, out_dir))
-
+                else:
+                    print(f"[IOSBridgeServer] Received non-binary message: {message[:100]}")
+        except websockets.exceptions.ConnectionClosedOK:
+            print(f"[IOSBridgeServer] Client closed connection cleanly.")
+        except websockets.exceptions.ConnectionClosedError as cce:
+            print(f"[IOSBridgeServer] Client connection closed with error: {cce}")
         except Exception as e:
-            print(f"[IOSBridgeServer] Connection closed with info: {e}")
+            print(f"[IOSBridgeServer] Unexpected connection error: {e}")
+            import traceback
+            traceback.print_exc()
         finally:
             print(f"\n[IOSBridgeServer] iPhone disconnected. Total frames captured: {self.frame_count}")
             if self.frame_count > 0:

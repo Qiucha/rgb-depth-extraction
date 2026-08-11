@@ -179,15 +179,19 @@ def get_stereo_matcher(matcher_name: str = "sliding_window", **kwargs) -> BaseSt
     """
     Factory function for constructing stereo pair matcher instances.
 
-    :param matcher_name: Name of matcher ('sliding_window', 'zncc', 'ncc', 'sad', 'ssd', 'cre_stereo', 'raft_stereo', 'anystereo')
+    :param matcher_name: Name of matcher ('census_sgbm', 'sgbm', 'sliding_window', 'zncc', 'ncc', 'sad', 'ssd', 'cre_stereo', 'raft_stereo', 'anystereo')
     :param kwargs: Additional arguments for matcher initialization
     :return: Instance of BaseStereoMatcher
     """
     name = matcher_name.lower()
-    if name in ["sliding_window", "zncc", "ncc", "sad", "ssd"]:
+    if name in ["census_sgbm", "sgbm", "census"]:
+        from .census_sgbm_matcher import CensusSGBMMatcher
+        return CensusSGBMMatcher(**kwargs)
+    elif name in ["sliding_window", "zncc", "ncc", "sad", "ssd"]:
         metric = name if name in ["zncc", "ncc", "sad", "ssd"] else kwargs.pop("metric", "zncc")
         return ClassicalSlidingWindowAdapter(metric=metric, **kwargs)
     elif name in ["cre_stereo", "raft_stereo", "anystereo", "deep"]:
         return DeepDisparityMatcherAdapter(model_type=name, **kwargs)
     else:
-        raise ValueError(f"Unknown stereo matcher name: '{matcher_name}'. Supported options: 'sliding_window', 'zncc', 'ncc', 'sad', 'ssd', 'cre_stereo', 'raft_stereo', 'anystereo'")
+        raise ValueError(f"Unknown stereo matcher name: '{matcher_name}'. Supported options: 'census_sgbm', 'sliding_window', 'zncc', 'ncc', 'sad', 'ssd', 'cre_stereo', 'raft_stereo', 'anystereo'")
+

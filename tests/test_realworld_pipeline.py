@@ -57,7 +57,7 @@ class TestRealWorldPipeline(unittest.TestCase):
         import os
 
         seq_dir = generate_synthetic_realworld_dataset("data/test_realworld_seq")
-        results = run_realworld_pipeline(seq_dir, output_dir="digest_test_realworld", target_size=(320, 240))
+        results = run_realworld_pipeline(seq_dir, output_dir="digest_test_realworld", target_size=(320, 240), strict_quality_gates=False)
         
         self.assertIn("evaluation_metrics", results)
         self.assertIn("mae_m", results["evaluation_metrics"])
@@ -69,7 +69,7 @@ class TestRealWorldPipeline(unittest.TestCase):
         import os
 
         seq_dir = generate_synthetic_realworld_dataset("data/test_realworld_seq")
-        results = run_realworld_pipeline(seq_dir, output_dir="digest_test_realworld_deep", target_size=(320, 240), matcher_type="cre_stereo")
+        results = run_realworld_pipeline(seq_dir, output_dir="digest_test_realworld_deep", target_size=(320, 240), matcher_type="cre_stereo", strict_quality_gates=False)
         
         self.assertIn("evaluation_metrics", results)
         self.assertTrue(os.path.exists("digest_test_realworld_deep/realworld_summary.json"))

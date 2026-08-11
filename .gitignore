@@ -15,3 +15,5 @@ data/test_*/
 data/live_captures/*
 !data/live_captures/.gitkeep
 
+.trash/
+calibration-runs/

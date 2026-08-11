@@ -89,6 +89,37 @@ class TestIOSBridge(unittest.TestCase):
         self.assertAlmostEqual(frame_data["telemetry"]["hardware_bandwidth_cost"], 0.85)
         self.assertTrue(frame_data["telemetry"]["is_multi_cam_supported"])
 
+    def test_main_to_ultrawide_transform_is_adapted_for_legacy_pipeline(self):
+        image = np.zeros((32, 32, 3), dtype=np.uint8)
+        _, image_bytes = cv2.imencode('.jpg', image)
+        metadata = {
+            "main": {"fx": 100.0, "fy": 100.0, "cx": 16.0, "cy": 16.0},
+            "ultrawide": {"fx": 80.0, "fy": 80.0, "cx": 16.0, "cy": 16.0},
+            "main_to_ultrawide_transform": {
+                "rotation_matrix_3x3": np.eye(3).tolist(),
+                "translation_vector_m": [0.0195, 0.0, 0.0],
+            },
+        }
+        meta_bytes = json.dumps(metadata).encode("utf-8")
+        header = struct.pack(
+            HEADER_STRUCT,
+            HEADER_MAGIC,
+            1,
+            0,
+            9,
+            1000,
+            len(meta_bytes),
+            len(image_bytes),
+            len(image_bytes),
+        )
+
+        frame_data = BinaryPacketDecoder.decode(
+            header + meta_bytes + image_bytes.tobytes() + image_bytes.tobytes()
+        )
+
+        np.testing.assert_allclose(frame_data["R"], np.eye(3))
+        np.testing.assert_allclose(frame_data["T"], [-0.0195, 0.0, 0.0])
+
     def test_cli_subprocess_execution(self):
         import subprocess
         import sys

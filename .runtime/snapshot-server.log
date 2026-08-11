@@ -1,0 +1,484 @@
+=== Single-Snapshot Dual-Camera HTTP Upload Server active on http://0.0.0.0:8766 ===
+POST single photo pairs to http://<server_ip>:8766/api/upload_snapshot
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_135620/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_135620/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+
+========================================================
+🚀 VISUAL DIGEST DASHBOARD SERVER ACTIVE
+========================================================
+  - Digest Directory: /Users/q/Documents/Projects/robotics_neo/digest_live_iphone
+  - Dashboard URL:    http://localhost:8080
+========================================================
+
+
+========================================================
+🚀 VISUAL DIGEST DASHBOARD SERVER ACTIVE
+========================================================
+  - Digest Directory: /Users/q/Documents/Projects/robotics_neo/digest_live_iphone
+  - Dashboard URL:    http://localhost:8080
+========================================================
+
+=== Single-Snapshot Dual-Camera HTTP Upload Server active on http://0.0.0.0:8766 ===
+POST single photo pairs to http://<server_ip>:8766/api/upload_snapshot
+
+========================================================
+🚀 VISUAL DIGEST DASHBOARD SERVER ACTIVE
+========================================================
+  - Digest Directory: /Users/q/Documents/Projects/robotics_neo/digest_live_iphone
+  - Dashboard URL:    http://localhost:8080
+========================================================
+
+=== Single-Snapshot Dual-Camera HTTP Upload Server active on http://0.0.0.0:8766 ===
+POST single photo pairs to http://<server_ip>:8766/api/upload_snapshot
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_135815/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_135815/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Single-Snapshot Dual-Camera HTTP Upload Server active on http://0.0.0.0:8766 ===
+POST single photo pairs to http://<server_ip>:8766/api/upload_snapshot
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_140231/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_140231/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_140937/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_140937/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Single-Snapshot Dual-Camera HTTP Upload Server active on http://0.0.0.0:8766 ===
+POST single photo pairs to http://<server_ip>:8766/api/upload_snapshot
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_141245/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_141245/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_141254/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_141254/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_141309/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_141309/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_143055/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_143055/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_143115/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_143115/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_143213/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_143213/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_143251/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_143251/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Single-Snapshot Dual-Camera HTTP Upload Server active on http://0.0.0.0:8766 ===
+POST single photo pairs to http://<server_ip>:8766/api/upload_snapshot
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_143427/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_143427/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_143441/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_143441/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_143645/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_143645/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_143657/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_143657/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_144608/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_144608/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_144632/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_144632/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_144719/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_144719/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_145634/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_145634/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_145658/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_145658/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_145745/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_145745/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_145752/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_145752/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_145758/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_145758/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_145941/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_145941/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_150127/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_150127/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_151632/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_151632/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_151640/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_151640/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png
+=== Running Custom iPhone Stereo Depth Extraction ===
+Main Camera Image: data/live_captures/snapshot_20260811_152722/main.jpg
+Ultra-Wide Image:  data/live_captures/snapshot_20260811_152722/ultrawide.jpg
+[Calibration] Loading explicit Calibration Result: calibration-runs/current/result.json
+
+Successfully processed custom iPhone stereo pair!
+Output files saved to directory: 'digest_live_iphone/'
+  - Interactive Dashboard: digest_live_iphone/index.html
+  - Result disposition:    diagnostic
+  - Trusted depth:         False
+  - Result manifest:       digest_live_iphone/stereo_result.json
+  - Rectified UltraWide:   digest_live_iphone/rectified_ultrawide.png (physical left)
+  - Rectified Main RGB:    digest_live_iphone/rectified_main.png (physical right)
+  - Disparity Map:         digest_live_iphone/disparity_map.png
+  - Metric Depth Map:      digest_live_iphone/depth_map.png
+  - Depth Overlay:         digest_live_iphone/depth_overlay.png

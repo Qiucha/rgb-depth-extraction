@@ -55,13 +55,19 @@ public enum MultiCamSessionError: LocalizedError {
     }
 }
 
-public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDelegate {
+public class MultiCamSessionManager: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate {
     private let captureSession = AVCaptureMultiCamSession()
-    private var dataSynchronizer: AVCaptureDataOutputSynchronizer?
     private var frameCounter: UInt64 = 0
     private var mainOutputRef: AVCaptureVideoDataOutput?
     private var uwOutputRef: AVCaptureVideoDataOutput?
-    private let ciContext = CIContext(options: nil)
+    private let ciContext = CIContext(options: [.useSoftwareRenderer: false])
+    private let processingQueue = DispatchQueue(label: "com.robotics.multicam.processing", qos: .userInitiated)
+    private let syncQueueMain = DispatchQueue(label: "com.robotics.multicam.main", qos: .userInitiated)
+    private let syncQueueUW = DispatchQueue(label: "com.robotics.multicam.uw", qos: .userInitiated)
+
+    private var latestMainSampleBuffer: CMSampleBuffer?
+    private var latestUWSampleBuffer: CMSampleBuffer?
+    private let bufferLock = NSLock()
 
     // Cached hardware bandwidth cost to prevent session lock contention on frame delivery thread
     private var cachedHardwareBandwidthCost: Float = 0.0
@@ -128,6 +134,7 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
             for input in captureSession.inputs { captureSession.removeInput(input) }
             for output in captureSession.outputs { captureSession.removeOutput(output) }
 
+            // Use 32BGRA pixel format for direct CoreImage / CGImage JPEG rendering compatibility
             let pixelFormat = Int(kCVPixelFormatType_32BGRA)
 
             // 1. Configure Main Wide Camera
@@ -144,6 +151,7 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
             let mainOutput = AVCaptureVideoDataOutput()
             mainOutput.alwaysDiscardsLateVideoFrames = true
             mainOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: pixelFormat]
+            mainOutput.setSampleBufferDelegate(self, queue: syncQueueMain)
 
             guard captureSession.canAddOutput(mainOutput) else {
                 captureSession.commitConfiguration()
@@ -158,6 +166,9 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
             }
 
             let mainConnection = AVCaptureConnection(inputPorts: [mainPort], output: mainOutput)
+            if mainConnection.isVideoOrientationSupported {
+                mainConnection.videoOrientation = .landscapeRight
+            }
             if mainConnection.isCameraIntrinsicMatrixDeliverySupported {
                 mainConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
             }
@@ -177,6 +188,7 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
             let uwOutput = AVCaptureVideoDataOutput()
             uwOutput.alwaysDiscardsLateVideoFrames = true
             uwOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: pixelFormat]
+            uwOutput.setSampleBufferDelegate(self, queue: syncQueueUW)
 
             guard captureSession.canAddOutput(uwOutput) else {
                 captureSession.commitConfiguration()
@@ -191,14 +203,13 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
             }
 
             let uwConnection = AVCaptureConnection(inputPorts: [uwPort], output: uwOutput)
+            if uwConnection.isVideoOrientationSupported {
+                uwConnection.videoOrientation = .landscapeRight
+            }
             if uwConnection.isCameraIntrinsicMatrixDeliverySupported {
                 uwConnection.isCameraIntrinsicMatrixDeliveryEnabled = true
             }
             captureSession.addConnection(uwConnection)
-
-            // 3. Hardware Data Output Synchronizer
-            dataSynchronizer = AVCaptureDataOutputSynchronizer(dataOutputs: [mainOutput, uwOutput])
-            dataSynchronizer?.setDelegate(self, queue: DispatchQueue(label: "com.robotics.multicam.sync", qos: .userInitiated))
 
             lastCost = captureSession.hardwareCost
             captureSession.commitConfiguration()
@@ -225,93 +236,180 @@ public class MultiCamSessionManager: NSObject, AVCaptureDataOutputSynchronizerDe
         let targetFormat = device.formats.first { format in
             guard format.isMultiCamSupported else { return false }
             let dims = CMVideoFormatDescriptionGetDimensions(format.formatDescription)
-            return dims.width == targetWidth && dims.height == targetHeight
+            return (dims.width == targetWidth && dims.height == targetHeight) || (dims.width == targetHeight && dims.height == targetWidth)
         } ?? device.formats.first { $0.isMultiCamSupported }
 
         if let format = targetFormat {
             device.activeFormat = format
+            // Lock frame rate to 30 FPS (supported by all iOS multi-cam formats, hardwareCost <= 0.60)
+            let targetFrameDuration = CMTime(value: 1, timescale: 30)
+            for range in format.videoSupportedFrameRateRanges {
+                if range.minFrameDuration <= targetFrameDuration && targetFrameDuration <= range.maxFrameDuration {
+                    device.activeVideoMinFrameDuration = targetFrameDuration
+                    device.activeVideoMaxFrameDuration = targetFrameDuration
+                    print("[MultiCamSessionManager] Locked device framerate to 30 FPS")
+                    break
+                }
+            }
+
+            // Lock focus mode and set fixed lens position to prevent focus hunt blur (1.0 = farthest / infinity focus)
+            if device.isFocusModeSupported(.locked) {
+                device.setFocusModeLocked(lensPosition: 1.0) { _ in }
+                print("[MultiCamSessionManager] Locked focus mode to fixed lens position (1.0 - infinity focus)")
+            } else if device.isFocusModeSupported(.autoFocus) {
+                device.focusMode = .autoFocus
+            }
+
+            if device.isExposureModeSupported(.continuousAutoExposure) {
+                device.exposureMode = .continuousAutoExposure
+            }
         }
     }
 
+
+
     public func startSession() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.captureSession.startRunning()
+        bufferLock.lock()
+        latestMainSampleBuffer = nil
+        latestUWSampleBuffer = nil
+        bufferLock.unlock()
+
+        if !captureSession.isRunning {
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.captureSession.startRunning()
+            }
         }
     }
 
     public func stopSession() {
-        captureSession.stopRunning()
+        if captureSession.isRunning {
+            captureSession.stopRunning()
+        }
     }
 
-    // MARK: - AVCaptureDataOutputSynchronizerDelegate
-    public func dataOutputSynchronizer(_ synchronizer: AVCaptureDataOutputSynchronizer, didOutput synchronizedDataCollection: AVCaptureSynchronizedDataCollection) {
-        guard let mainOutput = mainOutputRef,
-              let uwOutput = uwOutputRef,
-              let mainData = synchronizedDataCollection.synchronizedData(for: mainOutput) as? AVCaptureSynchronizedSampleBufferData,
-              let uwData = synchronizedDataCollection.synchronizedData(for: uwOutput) as? AVCaptureSynchronizedSampleBufferData else {
+    // MARK: - AVCaptureVideoDataOutputSampleBufferDelegate
+    public func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        bufferLock.lock()
+
+        if output == mainOutputRef {
+            latestMainSampleBuffer = sampleBuffer
+        } else if output == uwOutputRef {
+            latestUWSampleBuffer = sampleBuffer
+        }
+
+        guard let mainBuffer = latestMainSampleBuffer,
+              let uwBuffer = latestUWSampleBuffer else {
+            bufferLock.unlock()
             return
         }
 
-        let mainBuffer = mainData.sampleBuffer
-        let uwBuffer = uwData.sampleBuffer
-        let ptsNS = UInt64(CMTimeGetSeconds(mainData.timestamp) * 1e9)
-        self.frameCounter += 1
+        let mainPTS = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(mainBuffer))
+        let uwPTS = CMTimeGetSeconds(CMSampleBufferGetPresentationTimeStamp(uwBuffer))
+        let timeDiff = abs(mainPTS - uwPTS)
 
-        guard let mainJPEG = sampleBufferToJPEG(mainBuffer),
-              let uwJPEG = sampleBufferToJPEG(uwBuffer) else { return }
+        if timeDiff < 0.05 {
+            // Matched synchronized pair within 50ms!
+            latestMainSampleBuffer = nil
+            latestUWSampleBuffer = nil
+            bufferLock.unlock()
 
-        let mainIntrinsics = extractIntrinsics(from: mainBuffer)
-        let mainMatrix = mainIntrinsics ?? matrix_float3x3(rows: [
-            SIMD3<Float>(1400.0, 0, 960.0),
-            SIMD3<Float>(0, 1400.0, 540.0),
-            SIMD3<Float>(0, 0, 1.0)
-        ])
+            self.frameCounter += 1
+            let currentFrameID = self.frameCounter
+            let ptsNS = UInt64(mainPTS * 1e9)
 
-        let uwIntrinsics = extractIntrinsics(from: uwBuffer)
-        let uwMatrix = uwIntrinsics ?? matrix_float3x3(rows: [
-            SIMD3<Float>(600.0, 0, 960.0),
-            SIMD3<Float>(0, 600.0, 540.0),
-            SIMD3<Float>(0, 0, 1.0)
-        ])
+            guard let mainPixelBuffer = CMSampleBufferGetImageBuffer(mainBuffer),
+                  let uwPixelBuffer = CMSampleBufferGetImageBuffer(uwBuffer) else {
+                return
+            }
 
-        let metaDict: [String: Any] = [
-            "frame_id": self.frameCounter,
-            "timestamp_pts_ns": ptsNS,
-            "main": [
-                "fx": mainMatrix[0][0], "fy": mainMatrix[1][1],
-                "cx": mainMatrix[0][2], "cy": mainMatrix[1][2]
-            ],
-            "ultrawide": [
-                "fx": uwMatrix[0][0], "fy": uwMatrix[1][1],
-                "cx": uwMatrix[0][2], "cy": uwMatrix[1][2]
-            ],
-            "extrinsics_uw_to_main": [
-                "rotation_matrix_3x3": [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]],
-                "translation_vector_mm": [19.5, 0.0, 0.0]
-            ],
-            "telemetry": [
-                "hardware_bandwidth_cost": self.cachedHardwareBandwidthCost,
-                "is_multi_cam_supported": AVCaptureMultiCamSession.isMultiCamSupported
-            ]
-        ]
+            let mainIntrinsics = extractIntrinsics(from: mainBuffer)
+            let uwIntrinsics = extractIntrinsics(from: uwBuffer)
 
-        guard let metaJSON = try? JSONSerialization.data(withJSONObject: metaDict) else { return }
+            // Offload heavy JPEG encoding off sample delegate thread
+            processingQueue.async { [weak self] in
+                guard let self = self else { return }
 
-        let packet = StereoFramePacket(
-            frameID: self.frameCounter,
-            timestampNS: ptsNS,
-            mainJPEG: mainJPEG,
-            ultrawideJPEG: uwJPEG,
-            metadataJSON: metaJSON
-        )
+                guard let mainJPEG = self.pixelBufferToJPEG(mainPixelBuffer),
+                      let uwJPEG = self.pixelBufferToJPEG(uwPixelBuffer) else {
+                    print("[MultiCamSessionManager] Warning: Failed to encode pixel buffer to JPEG payload for frame #\(currentFrameID)")
+                    return
+                }
 
-        self.onFrameCaptured?(packet)
+                let mainMatrix = mainIntrinsics ?? matrix_float3x3(rows: [
+                    SIMD3<Float>(1400.0, 0, 960.0),
+                    SIMD3<Float>(0, 1400.0, 540.0),
+                    SIMD3<Float>(0, 0, 1.0)
+                ])
+
+                let uwMatrix = uwIntrinsics ?? matrix_float3x3(rows: [
+                    SIMD3<Float>(600.0, 0, 960.0),
+                    SIMD3<Float>(0, 600.0, 540.0),
+                    SIMD3<Float>(0, 0, 1.0)
+                ])
+
+                let mainPTSNS = UInt64(mainPTS * 1e9)
+                let uwPTSNS = UInt64(uwPTS * 1e9)
+                let deltaMS = timeDiff * 1000.0
+
+                let metaDict: [String: Any] = [
+                    "frame_id": currentFrameID,
+                    "timestamp_pts_ns": ptsNS,
+                    "main_pts_ns": mainPTSNS,
+                    "ultrawide_pts_ns": uwPTSNS,
+                    "timestamp_delta_ms": deltaMS,
+                    "main": [
+                        "fx": mainMatrix[0][0], "fy": mainMatrix[1][1],
+                        "cx": mainMatrix[0][2], "cy": mainMatrix[1][2],
+                        "lens_position": 1.0,
+                        "focus_locked": true
+                    ],
+                    "ultrawide": [
+                        "fx": uwMatrix[0][0], "fy": uwMatrix[1][1],
+                        "cx": uwMatrix[0][2], "cy": uwMatrix[1][2],
+                        "lens_position": 1.0,
+                        "focus_locked": true
+                    ],
+                    "extrinsics_uw_to_main": [
+                        "rotation_matrix_3x3": [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0]],
+                        "translation_vector_mm": [19.5, 0.0, 0.0]
+                    ],
+                    "telemetry": [
+                        "hardware_bandwidth_cost": self.cachedHardwareBandwidthCost,
+                        "is_multi_cam_supported": AVCaptureMultiCamSession.isMultiCamSupported,
+                        "vcm_focus_locked": true
+                    ]
+                ]
+
+                guard let metaJSON = try? JSONSerialization.data(withJSONObject: metaDict) else { return }
+
+                let packet = StereoFramePacket(
+                    frameID: currentFrameID,
+                    timestampNS: ptsNS,
+                    mainJPEG: mainJPEG,
+                    ultrawideJPEG: uwJPEG,
+                    metadataJSON: metaJSON
+                )
+
+                self.onFrameCaptured?(packet)
+            }
+        } else {
+            // Drop older buffer if timestamps are too far apart
+            if mainPTS < uwPTS {
+                latestMainSampleBuffer = nil
+            } else {
+                latestUWSampleBuffer = nil
+            }
+            bufferLock.unlock()
+        }
     }
 
-    private func sampleBufferToJPEG(_ sampleBuffer: CMSampleBuffer) -> Data? {
-        guard let imageBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return nil }
+    private func pixelBufferToJPEG(_ imageBuffer: CVPixelBuffer) -> Data? {
         let ciImage = CIImage(cvImageBuffer: imageBuffer)
-        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent) else { return nil }
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let cgImage = ciContext.createCGImage(ciImage, from: ciImage.extent, format: .BGRA8, colorSpace: colorSpace) ?? ciContext.createCGImage(ciImage, from: ciImage.extent) else {
+            print("[MultiCamSessionManager] Error: Failed to render CGImage from pixel buffer")
+            return nil
+        }
         let uiImage = UIImage(cgImage: cgImage)
         return uiImage.jpegData(compressionQuality: 0.8)
     }
