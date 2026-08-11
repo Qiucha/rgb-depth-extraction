@@ -1,4 +1,4 @@
-# Robotics Neo: Stereo Depth Extraction
+# Robotics: RGB Camera Stereo Depth Extraction
 
 ## Mission
 Master the algorithmic mechanics of extracting 3D spatial depth maps from 2D stereo image pairs using epipolar block matching. This project explores similarity cost metrics (NCC vs. ZNCC), post-processing filters (WLS/Guided filtering), and the trade-offs between passive stereo matching and active structured light sensors in real-world robotics.
