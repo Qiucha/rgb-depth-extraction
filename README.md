@@ -1,4 +1,5 @@
 # Robotics: RGB Camera Stereo Depth Extraction
+> Created with Gemini & Codex
 
 ## Mission
 Master the algorithmic mechanics of extracting 3D spatial depth maps from 2D stereo image pairs using epipolar block matching. This project explores similarity cost metrics (NCC vs. ZNCC), post-processing filters (WLS/Guided filtering), and the trade-offs between passive stereo matching and active structured light sensors in real-world robotics.
