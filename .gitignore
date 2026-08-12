@@ -17,3 +17,7 @@ data/live_captures/*
 
 .trash/
 calibration-runs/
+!data/calib_snapshots
+data/calib_snapshots/*
+!data/live_captures
+data/live_captures/*
