@@ -1,4 +1,8 @@
 # Robotics: RGB Camera Stereo Depth Extraction
+
+Highly Recommanded: Check this page if your first time learning this topic!
+https://qiucha.github.io/rgb-depth-extraction/
+
 > Created with Gemini & Codex
 
 ## Mission
