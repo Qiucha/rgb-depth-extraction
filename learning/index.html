@@ -637,12 +637,12 @@
     <button class="tab-btn" onclick="switchTab(7)">
       <span class="tab-num">07</span> Lens Distortion
     </button>
-    <button class="tab-btn" onclick="switchTab(8)">
+    <!-- <button class="tab-btn" onclick="switchTab(8)">
       <span class="tab-num">08</span> 3D Triangulation Sandbox
     </button>
     <button class="tab-btn" onclick="switchTab(9)">
       <span class="tab-num">09</span> Homogeneous Coordinates Intuition
-    </button>
+    </button> -->
   </div>
 
   <!-- Main Dashboard Grid -->
@@ -899,7 +899,7 @@
                   <span class="slider-label">Translation $t_z$:</span>
                   <span class="slider-val" id="p3_tz_val">2.5 m</span>
                 </div>
-                <input type="range" id="p3_tz" min="-3.0" max="6.0" step="0.1" value="2.5" oninput="updatePanel3()">
+                <input type="range" id="p3_tz" min="-3.0" max="3.0" step="0.1" value="2.5" oninput="updatePanel3()">
               </div>
 
               <div class="math-card">
@@ -1317,183 +1317,6 @@
         </div>
       </div>
     </div>
-
-    <!-- PANEL 08: 3D TRIANGULATION SANDBOX -->
-    <div class="topic-panel" id="panel-8">
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <h2>08. Interactive 3D Stereo Triangulation Sandbox</h2>
-            <p>Place 3D target points in virtual space, simulate stereo projection, and measure reconstructed 3D points.</p>
-          </div>
-          <span class="header-badge">Full Interactive Sandbox</span>
-        </div>
-
-        <div class="panel-content-grid">
-          <div class="viewport-outer-wrapper">
-            <div class="viewport-header-bar">
-              <span class="viewport-title-text">3D World View: Stereo Pair C_L / C_R & Target Object</span>
-            </div>
-            <div class="visual-viewport" id="viewportTriangulation"></div>
-          </div>
-
-          <div class="control-math-section">
-            <div class="math-card">
-              <div class="math-card-title">Real-Time Stereo Reconstruction Metrics</div>
-              <div class="output-grid">
-                <div class="output-item">
-                  <span class="output-item-lbl">True World 3D Point P</span>
-                  <span class="output-item-val" id="p8_true_pt">[0.30, 0.20, 2.80]</span>
-                </div>
-                <div class="output-item">
-                  <span class="output-item-lbl">Left Pixel $(u_L, v_L)$</span>
-                  <span class="output-item-val" id="p8_left_px">[400, 290]</span>
-                </div>
-                <div class="output-item">
-                  <span class="output-item-lbl">Right Pixel $(u_R, v_R)$</span>
-                  <span class="output-item-val" id="p8_right_px">[370, 290]</span>
-                </div>
-                <div class="output-item">
-                  <span class="output-item-lbl">Computed Disparity ($d$)</span>
-                  <span class="output-item-val" id="p8_disp">17.1 px</span>
-                </div>
-                <div class="output-item">
-                  <span class="output-item-lbl">Reconstructed 3D Depth ($Z_{rec}$)</span>
-                  <span class="output-item-val" id="p8_rec_z">2.80 m</span>
-                </div>
-                <div class="output-item">
-                  <span class="output-item-lbl">Reconstruction Error</span>
-                  <span class="output-item-val" id="p8_err">0.000 m</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="controls-card">
-              <div class="slider-group">
-                <div class="slider-header">
-                  <span class="slider-label">Baseline Distance ($B$):</span>
-                  <span class="slider-val" id="p8_b_val">0.12 m</span>
-                </div>
-                <input type="range" id="p8_b" min="0.05" max="1.0" step="0.01" value="0.12" oninput="updatePanel8()">
-              </div>
-
-              <div class="slider-group">
-                <div class="slider-header">
-                  <span class="slider-label">Focal Length ($f$):</span>
-                  <span class="slider-val" id="p8_f_val">400 px</span>
-                </div>
-                <input type="range" id="p8_f" min="150" max="600" step="5" value="400" oninput="updatePanel8()">
-              </div>
-
-              <div class="slider-group">
-                <div class="slider-header">
-                  <span class="slider-label">Pixel Noise ($\sigma$):</span>
-                  <span class="slider-val" id="p8_noise_val">0.0 px</span>
-                </div>
-                <input type="range" id="p8_noise" min="0.0" max="5.0" step="0.1" value="0.0" oninput="updatePanel8()">
-              </div>
-            </div>
-
-            <div class="takeaway-box">
-              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
-              <ul class="takeaway-list">
-                <li><strong>Forward Projection:</strong> Point $P(X,Y,Z)$ projects into Left & Right cameras via matrices $\mathbf{P}_L, \mathbf{P}_R$.</li>
-                <li><strong>Closed-Form Triangulation:</strong> Disparity $d = u_L - u_R$ yields $Z = \frac{f \cdot B}{d}$, $X = \frac{(u_L - c_x) B}{d}$, $Y = \frac{(v_L - c_y) B}{d}$.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PANEL 09: HOMOGENEOUS COORDINATES INTUITION -->
-    <div class="topic-panel" id="panel-9">
-      <div class="panel-card">
-        <div class="panel-header">
-          <div class="panel-title-group">
-            <h2>09. Mathematical Intuition: Why Homogeneous Coordinates?</h2>
-            <p>Understand why 4D projective space $(X, Y, Z, W)^T$ is essential for camera matrices and computer vision.</p>
-          </div>
-          <span class="header-badge">Mathematical Foundations</span>
-        </div>
-
-        <div class="panel-content-grid">
-          <div class="viewport-outer-wrapper">
-            <div class="viewport-header-bar">
-              <span class="viewport-title-text">Interactive 4D Projective Ray to 3D Cartesian Projection</span>
-            </div>
-            <div class="visual-viewport" id="viewportHomogeneous">
-              <canvas id="canvasHomogeneous" width="650" height="406"></canvas>
-            </div>
-          </div>
-
-          <div class="control-math-section">
-            <div class="math-card">
-              <div class="math-card-title">1. Homogeneous Vector Definition & Scale Invariance</div>
-              <div class="math-display">
-                $$\mathbf{P}_{euclidean} = \begin{bmatrix} X \\ Y \\ Z \end{bmatrix} \iff \tilde{\mathbf{P}}_{homo} = \begin{bmatrix} X \\ Y \\ Z \\ W \end{bmatrix} \equiv \begin{bmatrix} X/W \\ Y/W \\ Z/W \\ 1 \end{bmatrix}$$
-              </div>
-            </div>
-
-            <div class="math-card">
-              <div class="math-card-title">2. Linearizing Translation into Matrix Multiplication</div>
-              <div class="math-display">
-                $$\begin{bmatrix} \mathbf{P}_{cam} \\ 1 \end{bmatrix} = \begin{bmatrix} \mathbf{R}_{3 \times 3} & \mathbf{t}_{3 \times 1} \\ \mathbf{0}^T & 1 \end{bmatrix} \begin{bmatrix} \mathbf{P}_{world} \\ 1 \end{bmatrix}$$
-              </div>
-            </div>
-
-            <div class="math-card">
-              <div class="math-card-title">3. Unified Matrix Composition ($\mathbf{P} = \mathbf{K} [\mathbf{R} \mid \mathbf{t}]$)</div>
-              <div class="math-display">
-                $$\begin{bmatrix} u \cdot Z_c \\ v \cdot Z_c \\ Z_c \end{bmatrix} = \mathbf{P}_{3 \times 4} \begin{bmatrix} X_w \\ Y_w \\ Z_w \\ 1 \end{bmatrix}$$
-              </div>
-            </div>
-
-            <div class="controls-card">
-              <div class="slider-group">
-                <div class="slider-header">
-                  <span class="slider-label">Homogeneous Scale Factor $W$:</span>
-                  <span class="slider-val" id="p9_w_val">1.00</span>
-                </div>
-                <input type="range" id="p9_w" min="0.1" max="3.0" step="0.05" value="1.00" oninput="updatePanel9()">
-              </div>
-
-              <div class="slider-group">
-                <div class="slider-header">
-                  <span class="slider-label">Homogeneous $X$:</span>
-                  <span class="slider-val" id="p9_x_val">1.20</span>
-                </div>
-                <input type="range" id="p9_x" min="-4.0" max="4.0" step="0.1" value="1.20" oninput="updatePanel9()">
-              </div>
-
-              <div class="slider-group">
-                <div class="slider-header">
-                  <span class="slider-label">Homogeneous $Y$:</span>
-                  <span class="slider-val" id="p9_y_val">0.80</span>
-                </div>
-                <input type="range" id="p9_y" min="-4.0" max="4.0" step="0.1" value="0.80" oninput="updatePanel9()">
-              </div>
-
-              <div class="output-grid">
-                <div class="output-item">
-                  <span class="output-item-lbl">Normalized Euclidean Point $(X/W, Y/W)$</span>
-                  <span class="output-item-val" id="p9_euclid_res">(1.20, 0.80)</span>
-                </div>
-              </div>
-            </div>
-
-            <div class="takeaway-box">
-              <div class="takeaway-title">💡 Key Intuition Takeaways</div>
-              <ul class="takeaway-list">
-                <li><strong>Space Elevation:</strong> Embeds 3D Cartesian coordinates into 4D projective space $(X, Y, Z, W)^T$.</li>
-                <li><strong>Linear Matrix Composition:</strong> Converts non-linear vector translations ($\mathbf{R}\mathbf{x} + \mathbf{t}$) and infinite points ($W=0$) into linear GPU matrix operations.</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </div>
 </div>
 
