@@ -1,6 +1,7 @@
 # Robotics: RGB Camera Stereo Depth Extraction
 
-Highly Recommanded: Check this page if your first time learning this topic!
+Highly Recommanded: Check this page (on computer) if your first time learning this topic!
+
 https://qiucha.github.io/rgb-depth-extraction/
 
 > Created with Gemini & Codex
@@ -17,7 +18,7 @@ Master the algorithmic mechanics of extracting 3D spatial depth maps from 2D ste
 This system estimates a **Disparity Map** from a rectified Stereo Pair and converts valid disparities into a metric **Depth Map**. It relies on epipolar sliding window block matching to locate corresponding features between left and right views along horizontal scanlines.
 
 ## Components
-- **`learning/`**: Basic camera related material with interactive interface for intuitive learning.
+- **`learning/`**: Basic camera related material with interactive interface for intuitive learning. Where the newest ones are developing, but not yet published to the root directory for github page. **CAUTION**: MIGHT CONTAIN SOME OBVIOUS MISLEADING MISTAKES.
 - **`src/`**: Core logic for stereo depth extraction, including sliding window block matching and filtering.
 - **`ios/`** & **`tools/`**: iOS dual-camera streaming and diagnostic tools.
 - **`docs/`**: Specifications and documentation (e.g., iOS streaming diagnosis).
